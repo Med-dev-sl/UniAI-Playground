@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FloatingOrbs } from '@/components/ui/FloatingOrbs';
-import { Logo } from '@/components/Logo';
 import { HeroSection } from '@/components/HeroSection';
 import { LevelSelector } from '@/components/LevelSelector';
 import { FacultySelector } from '@/components/FacultySelector';
@@ -83,7 +82,7 @@ const Index = () => {
       >
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <button onClick={resetToStart} className="focus:outline-none">
-            <Logo />
+            <img src="/logo.png" alt="Platform Logo" className="w-40 h-40" />
           </button>
           
           {step !== 'hero' && step !== 'chat' && (

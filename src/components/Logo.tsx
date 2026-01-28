@@ -56,3 +56,6 @@ export function Logo({ size = 'md' }: LogoProps) {
     </div>
   );
 }
+
+// Usage
+<Logo size="lg" />
