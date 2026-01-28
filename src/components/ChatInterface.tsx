@@ -2,7 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, ArrowLeft, Bot, User, Sparkles, RefreshCw } from 'lucide-react';
 import { AnimatedButton } from './ui/AnimatedButton';
-import { Course, getFacultyById, getCourseById } from '@/data/courses';
+import { getCourseById, getFacultyById } from '@/data/courses';
+import { useToast } from '@/hooks/use-toast';
 
 interface Message {
   id: string;
@@ -16,9 +17,12 @@ interface ChatInterfaceProps {
   onBack: () => void;
 }
 
+const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/course-chat`;
+
 export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
   const course = getCourseById(courseId);
   const faculty = course ? getFacultyById(course.faculty) : null;
+  const { toast } = useToast();
   
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -41,6 +45,129 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
     scrollToBottom();
   }, [messages]);
 
+  const streamChat = async (userMessages: Message[]) => {
+    const response = await fetch(CHAT_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      },
+      body: JSON.stringify({
+        messages: userMessages.map(m => ({ role: m.role, content: m.content })),
+        courseId: course?.id || '',
+        courseName: course?.name || '',
+        courseLevel: course?.level || '',
+        facultyName: faculty?.name || '',
+        courseDescription: course?.description || '',
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      
+      if (response.status === 429) {
+        toast({
+          title: "Rate Limited",
+          description: "Too many requests. Please wait a moment and try again.",
+          variant: "destructive",
+        });
+        throw new Error("Rate limited");
+      }
+      
+      if (response.status === 402) {
+        toast({
+          title: "Usage Limit Reached",
+          description: "Please add credits to continue using AI features.",
+          variant: "destructive",
+        });
+        throw new Error("Payment required");
+      }
+      
+      throw new Error(errorData.error || "Failed to get response");
+    }
+
+    if (!response.body) throw new Error("No response body");
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let textBuffer = "";
+    let assistantContent = "";
+    let streamDone = false;
+
+    // Create initial assistant message
+    const assistantId = Date.now().toString();
+    setMessages(prev => [
+      ...prev,
+      { id: assistantId, role: 'assistant', content: '', timestamp: new Date() }
+    ]);
+
+    while (!streamDone) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      textBuffer += decoder.decode(value, { stream: true });
+
+      let newlineIndex: number;
+      while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
+        let line = textBuffer.slice(0, newlineIndex);
+        textBuffer = textBuffer.slice(newlineIndex + 1);
+
+        if (line.endsWith("\r")) line = line.slice(0, -1);
+        if (line.startsWith(":") || line.trim() === "") continue;
+        if (!line.startsWith("data: ")) continue;
+
+        const jsonStr = line.slice(6).trim();
+        if (jsonStr === "[DONE]") {
+          streamDone = true;
+          break;
+        }
+
+        try {
+          const parsed = JSON.parse(jsonStr);
+          const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+          if (content) {
+            assistantContent += content;
+            setMessages(prev => 
+              prev.map(m => 
+                m.id === assistantId 
+                  ? { ...m, content: assistantContent }
+                  : m
+              )
+            );
+          }
+        } catch {
+          textBuffer = line + "\n" + textBuffer;
+          break;
+        }
+      }
+    }
+
+    // Final flush
+    if (textBuffer.trim()) {
+      for (let raw of textBuffer.split("\n")) {
+        if (!raw) continue;
+        if (raw.endsWith("\r")) raw = raw.slice(0, -1);
+        if (raw.startsWith(":") || raw.trim() === "") continue;
+        if (!raw.startsWith("data: ")) continue;
+        const jsonStr = raw.slice(6).trim();
+        if (jsonStr === "[DONE]") continue;
+        try {
+          const parsed = JSON.parse(jsonStr);
+          const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+          if (content) {
+            assistantContent += content;
+            setMessages(prev => 
+              prev.map(m => 
+                m.id === assistantId 
+                  ? { ...m, content: assistantContent }
+                  : m
+              )
+            );
+          }
+        } catch { /* ignore */ }
+      }
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isTyping) return;
@@ -52,33 +179,19 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
       timestamp: new Date()
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    const updatedMessages = [...messages, userMessage];
+    setMessages(updatedMessages);
     setInput('');
     setIsTyping(true);
 
-    // Simulate AI response (in production, this would call your AI backend)
-    setTimeout(() => {
-      const aiResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: generateResponse(input, course),
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, aiResponse]);
+    try {
+      await streamChat(updatedMessages);
+    } catch (error) {
+      console.error("Chat error:", error);
+      // Error toasts are shown in streamChat
+    } finally {
       setIsTyping(false);
-    }, 1500);
-  };
-
-  const generateResponse = (query: string, course?: Course): string => {
-    // This is a placeholder - in production, integrate with your AI backend
-    const responses = [
-      `Great question about ${course?.shortName}! This topic is fundamental to understanding the core concepts of your programme. Let me explain...`,
-      `In the context of ${course?.shortName}, this is an important area to master. Here's what you need to know...`,
-      `As a ${course?.level} student in ${course?.shortName}, understanding this will help you excel. Here's my explanation...`,
-      `This is a key concept in your field of study. Based on the ${course?.shortName} curriculum, here's what I can share...`,
-    ];
-    return responses[Math.floor(Math.random() * responses.length)] + 
-      `\n\n*Note: I'm a demo AI assistant. For full functionality, please connect me to a backend AI service.*`;
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -95,6 +208,13 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
       content: `Chat cleared! 🔄\n\nI'm ready to help you with any questions about **${course?.shortName}**. What would you like to learn today?`,
       timestamp: new Date()
     }]);
+  };
+
+  // Simple markdown rendering for bold text
+  const renderContent = (content: string) => {
+    return content.split('**').map((part, i) => 
+      i % 2 === 1 ? <strong key={i}>{part}</strong> : part
+    );
   };
 
   return (
@@ -142,7 +262,7 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              transition={{ delay: index * 0.1 }}
+              transition={{ delay: index * 0.05 }}
               className={`flex gap-3 ${message.role === 'user' ? 'flex-row-reverse' : ''}`}
             >
               <div className={`w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center ${
@@ -160,9 +280,7 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
                 message.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'
               }`}>
                 <div className="whitespace-pre-wrap text-sm">
-                  {message.content.split('**').map((part, i) => 
-                    i % 2 === 1 ? <strong key={i}>{part}</strong> : part
-                  )}
+                  {renderContent(message.content)}
                 </div>
                 <div className={`text-xs mt-2 ${
                   message.role === 'user' ? 'text-primary-foreground/70' : 'text-muted-foreground'
@@ -175,7 +293,7 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
         </AnimatePresence>
 
         {/* Typing indicator */}
-        {isTyping && (
+        {isTyping && messages[messages.length - 1]?.role === 'user' && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
