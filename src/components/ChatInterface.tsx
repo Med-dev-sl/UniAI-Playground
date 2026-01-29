@@ -1,9 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, ArrowLeft, Bot, User, Sparkles, RefreshCw } from 'lucide-react';
+import { Send, ArrowLeft, Bot, User, Sparkles, RefreshCw, History } from 'lucide-react';
 import { AnimatedButton } from './ui/AnimatedButton';
 import { getCourseById, getFacultyById } from '@/data/courses';
 import { useToast } from '@/hooks/use-toast';
+import { useChatHistory, ChatMessage } from '@/hooks/useChatHistory';
+import { ConversationHistory } from './ConversationHistory';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Message {
   id: string;
@@ -23,19 +26,46 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
   const course = getCourseById(courseId);
   const faculty = course ? getFacultyById(course.faculty) : null;
   const { toast } = useToast();
+  const { user } = useAuth();
   
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      role: 'assistant',
-      content: `Welcome to UniAI Playground! 🎓\n\nI'm your specialized AI assistant for **${course?.shortName}**. I'm here to help you with questions specifically related to your ${course?.level} programme.\n\nFeel free to ask me about:\n• Course concepts and theories\n• Study materials and resources\n• Assignment guidance\n• Exam preparation tips\n• Career opportunities in this field\n\nHow can I assist you today?`,
-      timestamp: new Date()
-    }
-  ]);
+  const {
+    conversation,
+    messages: savedMessages,
+    conversations,
+    loading: historyLoading,
+    createConversation,
+    saveMessage,
+    switchConversation,
+    deleteConversation,
+  } = useChatHistory(courseId);
+
+  const [showHistory, setShowHistory] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  const getWelcomeMessage = (): Message => ({
+    id: 'welcome',
+    role: 'assistant',
+    content: `Welcome to UniAI Playground! 🎓\n\nI'm your specialized AI assistant for **${course?.shortName}**. I'm here to help you with questions specifically related to your ${course?.level} programme.\n\nFeel free to ask me about:\n• Course concepts and theories\n• Study materials and resources\n• Assignment guidance\n• Exam preparation tips\n• Career opportunities in this field\n\nHow can I assist you today?`,
+    timestamp: new Date()
+  });
+
+  // Load saved messages when conversation changes
+  useEffect(() => {
+    if (savedMessages.length > 0) {
+      setMessages(savedMessages.map((m: ChatMessage) => ({
+        id: m.id,
+        role: m.role,
+        content: m.content,
+        timestamp: new Date(m.created_at)
+      })));
+    } else if (!historyLoading) {
+      setMessages([getWelcomeMessage()]);
+    }
+  }, [savedMessages, historyLoading, course?.shortName, course?.level]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -45,7 +75,7 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
     scrollToBottom();
   }, [messages]);
 
-  const streamChat = async (userMessages: Message[]) => {
+  const streamChat = async (userMessages: Message[], conversationId: string) => {
     const response = await fetch(CHAT_URL, {
       method: "POST",
       headers: {
@@ -94,7 +124,6 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
     let assistantContent = "";
     let streamDone = false;
 
-    // Create initial assistant message
     const assistantId = Date.now().toString();
     setMessages(prev => [
       ...prev,
@@ -166,11 +195,32 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
         } catch { /* ignore */ }
       }
     }
+
+    // Save assistant message to database
+    if (assistantContent) {
+      await saveMessage(conversationId, 'assistant', assistantContent);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isTyping) return;
+    if (!input.trim() || isTyping || !user) return;
+
+    let currentConversation = conversation;
+    
+    // Create conversation if none exists
+    if (!currentConversation) {
+      const firstMessagePreview = input.trim().slice(0, 50);
+      currentConversation = await createConversation(firstMessagePreview);
+      if (!currentConversation) {
+        toast({
+          title: "Error",
+          description: "Failed to create conversation. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -179,16 +229,18 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
       timestamp: new Date()
     };
 
+    // Save user message to database
+    await saveMessage(currentConversation.id, 'user', userMessage.content);
+
     const updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
     setInput('');
     setIsTyping(true);
 
     try {
-      await streamChat(updatedMessages);
+      await streamChat(updatedMessages, currentConversation.id);
     } catch (error) {
       console.error("Chat error:", error);
-      // Error toasts are shown in streamChat
     } finally {
       setIsTyping(false);
     }
@@ -201,163 +253,203 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
     }
   };
 
-  const clearChat = () => {
-    setMessages([{
-      id: '1',
-      role: 'assistant',
-      content: `Chat cleared! 🔄\n\nI'm ready to help you with any questions about **${course?.shortName}**. What would you like to learn today?`,
-      timestamp: new Date()
-    }]);
+  const handleNewChat = async () => {
+    await createConversation();
+    setMessages([getWelcomeMessage()]);
   };
 
-  // Simple markdown rendering for bold text
+  const handleSelectConversation = async (conversationId: string) => {
+    await switchConversation(conversationId);
+    setShowHistory(false);
+  };
+
   const renderContent = (content: string) => {
     return content.split('**').map((part, i) => 
       i % 2 === 1 ? <strong key={i}>{part}</strong> : part
     );
   };
 
+  if (historyLoading) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-8rem)]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-electric" />
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)] max-h-[800px]">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="glass-card p-4 mb-4"
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <AnimatedButton variant="ghost" size="sm" onClick={onBack}>
-              <ArrowLeft className="w-4 h-4" />
-            </AnimatedButton>
-            
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-electric to-electric-glow flex items-center justify-center">
-                <Bot className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <div>
-                <h3 className="font-display font-semibold text-foreground">
-                  {course?.shortName} AI
-                </h3>
-                <p className="text-xs text-muted-foreground flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                  Online • {faculty?.shortName}
-                </p>
+    <div className="flex gap-4 h-[calc(100vh-8rem)] max-h-[800px]">
+      {/* Conversation History Sidebar */}
+      <AnimatePresence>
+        {showHistory && (
+          <motion.div
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: 280, opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            className="flex-shrink-0 overflow-hidden"
+          >
+            <ConversationHistory
+              conversations={conversations}
+              currentConversationId={conversation?.id}
+              onSelect={handleSelectConversation}
+              onNew={handleNewChat}
+              onDelete={deleteConversation}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass-card p-4 mb-4"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <AnimatedButton variant="ghost" size="sm" onClick={onBack}>
+                <ArrowLeft className="w-4 h-4" />
+              </AnimatedButton>
+              
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-electric to-electric-glow flex items-center justify-center">
+                  <Bot className="w-5 h-5 text-primary-foreground" />
+                </div>
+                <div>
+                  <h3 className="font-display font-semibold text-foreground">
+                    {course?.shortName} AI
+                  </h3>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                    Online • {faculty?.shortName}
+                  </p>
+                </div>
               </div>
             </div>
+
+            <div className="flex items-center gap-2">
+              <AnimatedButton 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setShowHistory(!showHistory)}
+                className={showHistory ? 'bg-electric/20' : ''}
+              >
+                <History className="w-4 h-4" />
+              </AnimatedButton>
+              <AnimatedButton variant="ghost" size="sm" onClick={handleNewChat}>
+                <RefreshCw className="w-4 h-4" />
+              </AnimatedButton>
+            </div>
           </div>
+        </motion.div>
 
-          <AnimatedButton variant="ghost" size="sm" onClick={clearChat}>
-            <RefreshCw className="w-4 h-4" />
-          </AnimatedButton>
-        </div>
-      </motion.div>
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2 custom-scrollbar">
+          <AnimatePresence>
+            {messages.map((message, index) => (
+              <motion.div
+                key={message.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ delay: index * 0.05 }}
+                className={`flex gap-3 ${message.role === 'user' ? 'flex-row-reverse' : ''}`}
+              >
+                <div className={`w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center ${
+                  message.role === 'user' 
+                    ? 'bg-electric' 
+                    : 'bg-gradient-to-br from-electric/20 to-electric-glow/20 border border-electric/30'
+                }`}>
+                  {message.role === 'user' 
+                    ? <User className="w-4 h-4 text-primary-foreground" />
+                    : <Sparkles className="w-4 h-4 text-electric" />
+                  }
+                </div>
+                
+                <div className={`max-w-[80%] ${
+                  message.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'
+                }`}>
+                  <div className="whitespace-pre-wrap text-sm">
+                    {renderContent(message.content)}
+                  </div>
+                  <div className={`text-xs mt-2 ${
+                    message.role === 'user' ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                  }`}>
+                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2 custom-scrollbar">
-        <AnimatePresence>
-          {messages.map((message, index) => (
+          {isTyping && messages[messages.length - 1]?.role === 'user' && (
             <motion.div
-              key={message.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ delay: index * 0.05 }}
-              className={`flex gap-3 ${message.role === 'user' ? 'flex-row-reverse' : ''}`}
+              className="flex gap-3"
             >
-              <div className={`w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center ${
-                message.role === 'user' 
-                  ? 'bg-electric' 
-                  : 'bg-gradient-to-br from-electric/20 to-electric-glow/20 border border-electric/30'
-              }`}>
-                {message.role === 'user' 
-                  ? <User className="w-4 h-4 text-primary-foreground" />
-                  : <Sparkles className="w-4 h-4 text-electric" />
-                }
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-electric/20 to-electric-glow/20 border border-electric/30 flex items-center justify-center">
+                <Sparkles className="w-4 h-4 text-electric" />
               </div>
-              
-              <div className={`max-w-[80%] ${
-                message.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'
-              }`}>
-                <div className="whitespace-pre-wrap text-sm">
-                  {renderContent(message.content)}
-                </div>
-                <div className={`text-xs mt-2 ${
-                  message.role === 'user' ? 'text-primary-foreground/70' : 'text-muted-foreground'
-                }`}>
-                  {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              <div className="chat-bubble-ai">
+                <div className="flex gap-1">
+                  <motion.div
+                    className="w-2 h-2 rounded-full bg-electric"
+                    animate={{ opacity: [0.4, 1, 0.4] }}
+                    transition={{ duration: 1, repeat: Infinity, delay: 0 }}
+                  />
+                  <motion.div
+                    className="w-2 h-2 rounded-full bg-electric"
+                    animate={{ opacity: [0.4, 1, 0.4] }}
+                    transition={{ duration: 1, repeat: Infinity, delay: 0.2 }}
+                  />
+                  <motion.div
+                    className="w-2 h-2 rounded-full bg-electric"
+                    animate={{ opacity: [0.4, 1, 0.4] }}
+                    transition={{ duration: 1, repeat: Infinity, delay: 0.4 }}
+                  />
                 </div>
               </div>
             </motion.div>
-          ))}
-        </AnimatePresence>
-
-        {/* Typing indicator */}
-        {isTyping && messages[messages.length - 1]?.role === 'user' && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex gap-3"
-          >
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-electric/20 to-electric-glow/20 border border-electric/30 flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-electric" />
-            </div>
-            <div className="chat-bubble-ai">
-              <div className="flex gap-1">
-                <motion.div
-                  className="w-2 h-2 rounded-full bg-electric"
-                  animate={{ opacity: [0.4, 1, 0.4] }}
-                  transition={{ duration: 1, repeat: Infinity, delay: 0 }}
-                />
-                <motion.div
-                  className="w-2 h-2 rounded-full bg-electric"
-                  animate={{ opacity: [0.4, 1, 0.4] }}
-                  transition={{ duration: 1, repeat: Infinity, delay: 0.2 }}
-                />
-                <motion.div
-                  className="w-2 h-2 rounded-full bg-electric"
-                  animate={{ opacity: [0.4, 1, 0.4] }}
-                  transition={{ duration: 1, repeat: Infinity, delay: 0.4 }}
-                />
-              </div>
-            </div>
-          </motion.div>
-        )}
-        
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Input */}
-      <motion.form
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        onSubmit={handleSubmit}
-        className="glass-card p-4"
-      >
-        <div className="flex gap-3">
-          <div className="flex-1 relative">
-            <textarea
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={`Ask about ${course?.shortName}...`}
-              className="w-full bg-muted/50 border border-border rounded-xl px-4 py-3 pr-12 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-electric/50 focus:border-electric/50 resize-none min-h-[52px] max-h-32"
-              rows={1}
-            />
-          </div>
-          <AnimatedButton
-            type="submit"
-            disabled={!input.trim() || isTyping}
-            className="self-end"
-          >
-            <Send className="w-5 h-5" />
-          </AnimatedButton>
+          )}
+          
+          <div ref={messagesEndRef} />
         </div>
-        <p className="text-xs text-muted-foreground mt-2 text-center">
-          Press Enter to send • Shift + Enter for new line
-        </p>
-      </motion.form>
+
+        {/* Input */}
+        <motion.form
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          onSubmit={handleSubmit}
+          className="glass-card p-4"
+        >
+          <div className="flex gap-3">
+            <div className="flex-1 relative">
+              <textarea
+                ref={inputRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={`Ask about ${course?.shortName}...`}
+                className="w-full bg-muted/50 border border-border rounded-xl px-4 py-3 pr-12 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-electric/50 focus:border-electric/50 resize-none min-h-[52px] max-h-32"
+                rows={1}
+              />
+            </div>
+            <AnimatedButton
+              type="submit"
+              disabled={!input.trim() || isTyping}
+              className="self-end"
+            >
+              <Send className="w-5 h-5" />
+            </AnimatedButton>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2 text-center">
+            Press Enter to send • Shift + Enter for new line
+          </p>
+        </motion.form>
+      </div>
     </div>
   );
 }
