@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { FloatingOrbs } from '@/components/ui/FloatingOrbs';
 import { HeroSection } from '@/components/HeroSection';
 import { LevelSelector } from '@/components/LevelSelector';
@@ -7,8 +8,10 @@ import { FacultySelector } from '@/components/FacultySelector';
 import { CourseSelector } from '@/components/CourseSelector';
 import { ChatInterface } from '@/components/ChatInterface';
 import { AnimatedButton } from '@/components/ui/AnimatedButton';
+import { UserMenu } from '@/components/UserMenu';
 import { ProgramLevel } from '@/data/courses';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, LogIn } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 type Step = 'hero' | 'level' | 'faculty' | 'course' | 'chat';
 
@@ -17,6 +20,9 @@ const Index = () => {
   const [selectedLevel, setSelectedLevel] = useState<ProgramLevel | null>(null);
   const [selectedFaculty, setSelectedFaculty] = useState<string | null>(null);
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
+  
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
 
   const handleLevelSelect = (level: ProgramLevel) => {
     setSelectedLevel(level);
@@ -42,7 +48,14 @@ const Index = () => {
         if (selectedFaculty) setStep('course');
         break;
       case 'course':
-        if (selectedCourse) setStep('chat');
+        if (selectedCourse) {
+          // Require login before chat
+          if (!user) {
+            navigate('/auth');
+            return;
+          }
+          setStep('chat');
+        }
         break;
     }
   };
@@ -85,22 +98,39 @@ const Index = () => {
             <img src="/logo.png" alt="Platform Logo" className="w-40 h-40" />
           </button>
           
-          {step !== 'hero' && step !== 'chat' && (
-            <div className="flex items-center gap-2">
-              {['level', 'faculty', 'course'].map((s, i) => (
-                <div
-                  key={s}
-                  className={`w-2 h-2 rounded-full transition-all ${
-                    step === s 
-                      ? 'w-8 bg-electric' 
-                      : ['level', 'faculty', 'course'].indexOf(step) > i
-                        ? 'bg-electric/50'
-                        : 'bg-muted'
-                  }`}
-                />
-              ))}
-            </div>
-          )}
+          <div className="flex items-center gap-4">
+            {step !== 'hero' && step !== 'chat' && (
+              <div className="flex items-center gap-2">
+                {['level', 'faculty', 'course'].map((s, i) => (
+                  <div
+                    key={s}
+                    className={`w-2 h-2 rounded-full transition-all ${
+                      step === s 
+                        ? 'w-8 bg-electric' 
+                        : ['level', 'faculty', 'course'].indexOf(step) > i
+                          ? 'bg-electric/50'
+                          : 'bg-muted'
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+            
+            {!loading && (
+              user ? (
+                <UserMenu />
+              ) : (
+                <AnimatedButton 
+                  variant="secondary" 
+                  size="sm" 
+                  onClick={() => navigate('/auth')}
+                >
+                  <LogIn className="w-4 h-4" />
+                  Sign In
+                </AnimatedButton>
+              )
+            )}
+          </div>
         </div>
       </motion.header>
 
@@ -200,18 +230,23 @@ const Index = () => {
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="flex justify-center mt-8"
+                  className="flex flex-col items-center gap-2 mt-8"
                 >
                   <AnimatedButton onClick={goToNextStep}>
-                    Start Chat with AI Assistant
+                    {user ? 'Start Chat with AI Assistant' : 'Sign In to Chat'}
                     <ArrowRight className="w-4 h-4" />
                   </AnimatedButton>
+                  {!user && (
+                    <p className="text-sm text-muted-foreground">
+                      Sign in required to access AI chat
+                    </p>
+                  )}
                 </motion.div>
               )}
             </motion.div>
           )}
 
-          {step === 'chat' && selectedCourse && (
+          {step === 'chat' && selectedCourse && user && (
             <motion.div
               key="chat"
               initial={{ opacity: 0, x: 100 }}
