@@ -269,15 +269,16 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
   };
 
   const renderContent = (content: string) => {
-    return content.split('**').map((part, i) => 
-      i % 2 === 1 ? <strong key={i}>{part}</strong> : part
-    );
+    // Remove all markdown bold markers (**) and heading hashes (##, ###, etc.)
+    const sanitized = content.replace(/\*\*/g, '').replace(/#+\s*/g, '').trim();
+    return sanitized;
   };
 
   // Clipboard
   const copyToClipboard = async (text: string) => {
     try {
-      await navigator.clipboard.writeText(text);
+      const cleaned = text.replace(/\*\*/g, '').replace(/#+\s*/g, '');
+      await navigator.clipboard.writeText(cleaned);
       toast({ title: 'Copied', description: 'AI response copied to clipboard.' });
     } catch (e) {
       toast({ title: 'Copy failed', description: 'Unable to copy to clipboard.', variant: 'destructive' });
@@ -286,7 +287,8 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
 
   // Download as Word (.doc) using HTML blob which Word can open
   const downloadAsWord = (text: string, filename = 'uniai-response') => {
-    const html = `<!doctype html><html><head><meta charset="utf-8"></head><body>${text
+    const cleaned = text.replace(/\*\*/g, '').replace(/#+\s*/g, '');
+    const html = `<!doctype html><html><head><meta charset="utf-8"></head><body>${cleaned
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
@@ -304,12 +306,13 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
 
   // Printable PDF via print dialog (user can choose Save as PDF)
   const downloadAsPdf = (text: string, filename = 'uniai-response') => {
+    const cleaned = text.replace(/\*\*/g, '').replace(/#+\s*/g, '');
     const w = window.open('', '_blank');
     if (!w) {
       toast({ title: 'Popup blocked', description: 'Unable to open print window.', variant: 'destructive' });
       return;
     }
-    const html = `<!doctype html><html><head><meta charset="utf-8"><title>${filename}</title><style>body{font-family:Inter, Arial, sans-serif;padding:24px;color:#111} pre{white-space:pre-wrap;font-family:inherit}</style></head><body><pre>${text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre></body></html>`;
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>${filename}</title><style>body{font-family:Inter, Arial, sans-serif;padding:24px;color:#111} pre{white-space:pre-wrap;font-family:inherit}</style></head><body><pre>${cleaned.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre></body></html>`;
     w.document.write(html);
     w.document.close();
     w.focus();
@@ -325,7 +328,8 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
       return;
     }
     window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text.replace(/\*\*/g, ''));
+    const cleaned = text.replace(/\*\*/g, '').replace(/#+\s*/g, '');
+    const u = new SpeechSynthesisUtterance(cleaned);
     // choose a female voice if available
     const voices = window.speechSynthesis.getVoices();
     let voice = voices.find(v => /female/i.test(v.name)) || voices.find(v => v.lang.startsWith('en')) || voices[0];
