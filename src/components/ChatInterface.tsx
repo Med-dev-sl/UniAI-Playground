@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, ArrowLeft, Bot, User, Sparkles, RefreshCw, History } from 'lucide-react';
+import { Send, ArrowLeft, Bot, User, Sparkles, RefreshCw, History, Star } from 'lucide-react';
 import { AnimatedButton } from './ui/AnimatedButton';
 import { getCourseById, getFacultyById } from '@/data/courses';
 import { useToast } from '@/hooks/use-toast';
 import { useChatHistory, ChatMessage } from '@/hooks/useChatHistory';
+import { useFavorites } from '@/hooks/useFavorites';
 import { ConversationHistory } from './ConversationHistory';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -39,10 +40,14 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
     deleteConversation,
   } = useChatHistory(courseId);
 
+  const { isFavorite, addFavorite, removeFavorite } = useFavorites();
+  
   const [showHistory, setShowHistory] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const isCourseFavorite = isFavorite(courseId);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -330,6 +335,14 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
             </div>
 
             <div className="flex items-center gap-2">
+              <AnimatedButton 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => isCourseFavorite ? removeFavorite(courseId) : addFavorite(courseId)}
+                className={isCourseFavorite ? 'text-yellow-500' : ''}
+              >
+                <Star className={`w-4 h-4 ${isCourseFavorite ? 'fill-current' : ''}`} />
+              </AnimatedButton>
               <AnimatedButton 
                 variant="ghost" 
                 size="sm" 

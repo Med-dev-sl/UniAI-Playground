@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { LogOut, User, Settings } from 'lucide-react';
+import { LogOut, User, Settings, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -48,6 +48,13 @@ export function UserMenu() {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="bg-border" />
+        <DropdownMenuItem 
+          onClick={() => navigate('/dashboard')}
+          className="text-muted-foreground hover:text-foreground cursor-pointer"
+        >
+          <LayoutDashboard className="mr-2 h-4 w-4" />
+          <span>Dashboard</span>
+        </DropdownMenuItem>
         <DropdownMenuItem className="text-muted-foreground hover:text-foreground cursor-pointer">
           <User className="mr-2 h-4 w-4" />
           <span>Profile</span>
