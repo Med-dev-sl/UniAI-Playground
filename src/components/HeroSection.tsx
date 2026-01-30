@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, ArrowRight, GraduationCap, Users, Brain, Download } from 'lucide-react';
 import { AnimatedButton } from './ui/AnimatedButton';
@@ -7,6 +8,26 @@ interface HeroSectionProps {
 }
 
 export function HeroSection({ onGetStarted }: HeroSectionProps) {
+  const [hasDownloaded, setHasDownloaded] = useState(false);
+
+  useEffect(() => {
+    try {
+      const downloaded = localStorage.getItem('appDownloaded');
+      if (downloaded === 'true') setHasDownloaded(true);
+    } catch (e) {
+      // ignore localStorage errors
+    }
+  }, []);
+
+  const handleDownload = () => {
+    try {
+      localStorage.setItem('appDownloaded', 'true');
+    } catch (e) {
+      // ignore
+    }
+    setHasDownloaded(true);
+    window.open('https://apk.e-droid.net/apk/app3905731-h6trgj.apk?v=1', '_blank', 'noopener,noreferrer');
+  };
   const stats = [
     { icon: GraduationCap, value: '8', label: 'Faculties' },
     { icon: Brain, value: '150+', label: 'Courses' },
@@ -107,13 +128,15 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
               <ArrowRight className="w-5 h-5" />
             </AnimatedButton>
 
-            <AnimatedButton
-              size="lg"
-              onClick={() => window.open('https://apk.e-droid.net/apk/app3905731-h6trgj.apk?v=1', '_blank', 'noopener,noreferrer')}
-            >
-              <Download className="w-5 h-5" />
-              Download App
-            </AnimatedButton>
+            {!hasDownloaded && (
+              <AnimatedButton
+                size="lg"
+                onClick={handleDownload}
+              >
+                <Download className="w-5 h-5" />
+                Download App
+              </AnimatedButton>
+            )}
           </div>
         </motion.div>
 
