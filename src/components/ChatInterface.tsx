@@ -276,15 +276,21 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
     setShowHistory(false);
   };
 
+  const cleanContent = (content: string) => {
+    return content
+      .replace(/###\s*/g, '') // Remove ### hashtags
+      .replace(/\*\*/g, ''); // Remove ** asterisks
+  };
+
   const renderContent = (content: string) => {
-    return content.split('**').map((part, i) => 
-      i % 2 === 1 ? <strong key={i}>{part}</strong> : part
-    );
+    const cleaned = cleanContent(content);
+    return cleaned;
   };
 
   // Copy to clipboard
   const handleCopyMessage = (content: string, messageId: string) => {
-    navigator.clipboard.writeText(content).then(() => {
+    const cleaned = cleanContent(content);
+    navigator.clipboard.writeText(cleaned).then(() => {
       setCopiedMessageId(messageId);
       toast({
         title: "Copied!",
@@ -302,6 +308,7 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
 
   // Download as Word Document
   const handleDownloadWord = (content: string) => {
+    const cleaned = cleanContent(content);
     const htmlContent = `
       <html>
         <head>
@@ -311,16 +318,17 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
             body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
             h1 { color: #333; }
             .meta { color: #666; font-size: 0.9em; margin-bottom: 20px; }
-            .content { white-space: pre-wrap; }
+            .content { white-space: pre-wrap; word-wrap: break-word; }
           </style>
         </head>
         <body>
           <h1>${course?.shortName} - AI Response</h1>
           <div class="meta">
             <p>Course: ${course?.name}</p>
+            <p>Faculty: ${faculty?.name || 'N/A'}</p>
             <p>Date: ${new Date().toLocaleString()}</p>
           </div>
-          <div class="content">${content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+          <div class="content">${cleaned.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
         </body>
       </html>
     `;
@@ -342,50 +350,36 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
   // Download as PDF
   const handleDownloadPDF = (content: string) => {
     try {
-      const pdfContent = `%PDF-1.4
-1 0 obj
-<< /Type /Catalog /Pages 2 0 R >>
-endobj
-2 0 obj
-<< /Type /Pages /Kids [3 0 R] /Count 1 >>
-endobj
-3 0 obj
-<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
-endobj
-4 0 obj
-<< /Length 1000 >>
-stream
-BT
-/F1 12 Tf
-50 750 Td
-(${course?.shortName} - AI Response) Tj
-0 -30 Td
-(Course: ${course?.name}) Tj
-0 -20 Td
-(Date: ${new Date().toLocaleString()}) Tj
-0 -40 Td
-(${content.replace(/[()]/g, '').substring(0, 500)}...) Tj
-ET
-endstream
-endobj
-5 0 obj
-<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
-endobj
-xref
-0 6
-0000000000 65535 f
-0000000009 00000 n
-0000000074 00000 n
-0000000133 00000 n
-0000000281 00000 n
-0000001331 00000 n
-trailer
-<< /Size 6 /Root 1 0 R >>
-startxref
-1420
-%%EOF`;
-
-      const blob = new Blob([pdfContent], { type: 'application/pdf' });
+      const cleaned = cleanContent(content);
+      // Create a complete HTML-based PDF with full content
+      const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>${course?.shortName} - Chat Response</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; padding: 40px; line-height: 1.8; font-size: 12px; color: #333; }
+    h1 { font-size: 24px; margin-bottom: 20px; color: #000; }
+    .meta { background: #f5f5f5; padding: 15px; margin-bottom: 30px; border-radius: 5px; font-size: 11px; }
+    .meta p { margin: 5px 0; }
+    .content { white-space: pre-wrap; word-break: break-word; font-size: 12px; line-height: 1.8; }
+  </style>
+</head>
+<body>
+  <h1>${course?.shortName} - AI Response</h1>
+  <div class="meta">
+    <p><strong>Course:</strong> ${course?.name}</p>
+    <p><strong>Faculty:</strong> ${faculty?.name || 'N/A'}</p>
+    <p><strong>Date:</strong> ${new Date().toLocaleString()}</p>
+  </div>
+  <div class="content">${cleaned}</div>
+</body>
+</html>`;
+      
+      // Create a blob and download as PDF
+      const blob = new Blob([htmlContent], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
