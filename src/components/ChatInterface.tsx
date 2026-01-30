@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, ArrowLeft, Bot, User, Sparkles, RefreshCw, History, Star } from 'lucide-react';
+import { Send, ArrowLeft, Bot, User, Sparkles, RefreshCw, History, Star, Copy, Download, Volume2, Square } from 'lucide-react';
 import { AnimatedButton } from './ui/AnimatedButton';
 import { getCourseById, getFacultyById } from '@/data/courses';
 import { useToast } from '@/hooks/use-toast';
@@ -19,6 +19,11 @@ interface Message {
 interface ChatInterfaceProps {
   courseId: string;
   onBack: () => void;
+}
+
+interface TextToSpeechState {
+  messageId: string | null;
+  isPlaying: boolean;
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/course-chat`;
@@ -46,10 +51,13 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [tts, setTts] = useState<TextToSpeechState>({ messageId: null, isPlaying: false });
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const isCourseFavorite = isFavorite(courseId);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   const getWelcomeMessage = (): Message => ({
     id: 'welcome',
@@ -274,6 +282,188 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
     );
   };
 
+  // Copy to clipboard
+  const handleCopyMessage = (content: string, messageId: string) => {
+    navigator.clipboard.writeText(content).then(() => {
+      setCopiedMessageId(messageId);
+      toast({
+        title: "Copied!",
+        description: "Message copied to clipboard",
+      });
+      setTimeout(() => setCopiedMessageId(null), 2000);
+    }).catch(() => {
+      toast({
+        title: "Error",
+        description: "Failed to copy message",
+        variant: "destructive",
+      });
+    });
+  };
+
+  // Download as Word Document
+  const handleDownloadWord = (content: string) => {
+    const htmlContent = `
+      <html>
+        <head>
+          <meta charset="UTF-8" />
+          <title>${course?.shortName} - Chat Response</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+            h1 { color: #333; }
+            .meta { color: #666; font-size: 0.9em; margin-bottom: 20px; }
+            .content { white-space: pre-wrap; }
+          </style>
+        </head>
+        <body>
+          <h1>${course?.shortName} - AI Response</h1>
+          <div class="meta">
+            <p>Course: ${course?.name}</p>
+            <p>Date: ${new Date().toLocaleString()}</p>
+          </div>
+          <div class="content">${content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+        </body>
+      </html>
+    `;
+    
+    const blob = new Blob([htmlContent], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${course?.shortName}-response-${Date.now()}.doc`;
+    link.click();
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Downloaded!",
+      description: "Response saved as Word document",
+    });
+  };
+
+  // Download as PDF
+  const handleDownloadPDF = (content: string) => {
+    try {
+      const pdfContent = `%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 1000 >>
+stream
+BT
+/F1 12 Tf
+50 750 Td
+(${course?.shortName} - AI Response) Tj
+0 -30 Td
+(Course: ${course?.name}) Tj
+0 -20 Td
+(Date: ${new Date().toLocaleString()}) Tj
+0 -40 Td
+(${content.replace(/[()]/g, '').substring(0, 500)}...) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f
+0000000009 00000 n
+0000000074 00000 n
+0000000133 00000 n
+0000000281 00000 n
+0000001331 00000 n
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1420
+%%EOF`;
+
+      const blob = new Blob([pdfContent], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${course?.shortName}-response-${Date.now()}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Downloaded!",
+        description: "Response saved as PDF",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to download PDF",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Text to Speech with female voice
+  const handleTextToSpeech = (content: string, messageId: string) => {
+    if (window.speechSynthesis.speaking) {
+      window.speechSynthesis.cancel();
+      setTts({ messageId: null, isPlaying: false });
+      return;
+    }
+
+    // Clean content for speech
+    const cleanContent = content
+      .replace(/\*\*/g, '')
+      .replace(/\n/g, ' ')
+      .replace(/\s+/g, ' ');
+
+    const utterance = new SpeechSynthesisUtterance(cleanContent);
+    utterance.rate = 0.9; // Slightly slow (0.5-2, default 1)
+    utterance.pitch = 1.2; // Slightly higher pitch for female voice
+    utterance.volume = 1;
+
+    // Load voices and select a female voice
+    const loadVoicesAndSpeak = () => {
+      const voices = window.speechSynthesis.getVoices();
+      const femaleVoice = voices.find(voice => 
+        voice.name.toLowerCase().includes('female') || 
+        voice.name.toLowerCase().includes('woman') ||
+        voice.name.includes('Google US English Female') ||
+        voice.name.includes('Samantha') ||
+        voice.name.includes('Victoria') ||
+        voice.name.includes('Karen')
+      ) || voices.find(voice => voice.name.toLowerCase().includes('female')) || voices[1] || voices[0];
+
+      if (femaleVoice) {
+        utterance.voice = femaleVoice;
+      }
+
+      utterance.onend = () => {
+        setTts({ messageId: null, isPlaying: false });
+      };
+
+      utteranceRef.current = utterance;
+      window.speechSynthesis.speak(utterance);
+      setTts({ messageId, isPlaying: true });
+    };
+
+    // Some browsers need a delay for voices to load
+    if (window.speechSynthesis.getVoices().length === 0) {
+      window.speechSynthesis.onvoiceschanged = loadVoicesAndSpeak;
+    } else {
+      loadVoicesAndSpeak();
+    }
+  };
+
+  // Stop speech
+  const handleStopSpeech = () => {
+    window.speechSynthesis.cancel();
+    setTts({ messageId: null, isPlaying: false });
+  };
+
   if (historyLoading) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-8rem)]">
@@ -283,24 +473,35 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
   }
 
   return (
-    <div className="flex gap-4 h-[calc(100vh-8rem)] max-h-[800px]">
-      {/* Conversation History Sidebar */}
+    <div className="flex gap-2 sm:gap-4 h-[calc(100vh-8rem)] max-h-[800px] flex-col sm:flex-row">
+      {/* Conversation History Sidebar - Mobile Drawer */}
       <AnimatePresence>
         {showHistory && (
-          <motion.div
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 280, opacity: 1 }}
-            exit={{ width: 0, opacity: 0 }}
-            className="flex-shrink-0 overflow-hidden"
-          >
-            <ConversationHistory
-              conversations={conversations}
-              currentConversationId={conversation?.id}
-              onSelect={handleSelectConversation}
-              onNew={handleNewChat}
-              onDelete={deleteConversation}
+          <>
+            {/* Mobile overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowHistory(false)}
+              className="fixed inset-0 bg-black/50 z-40 sm:hidden"
             />
-          </motion.div>
+            {/* Sidebar */}
+            <motion.div
+              initial={{ x: -300, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: -300, opacity: 0 }}
+              className="fixed left-0 top-0 bottom-0 z-50 sm:relative sm:z-auto overflow-hidden"
+            >
+              <ConversationHistory
+                conversations={conversations}
+                currentConversationId={conversation?.id}
+                onSelect={handleSelectConversation}
+                onNew={handleNewChat}
+                onDelete={deleteConversation}
+              />
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
 
@@ -310,31 +511,31 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass-card p-4 mb-4"
+          className="glass-card p-3 sm:p-4 mb-2 sm:mb-4 flex-shrink-0"
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <AnimatedButton variant="ghost" size="sm" onClick={onBack}>
+          <div className="flex items-center justify-between gap-2 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <AnimatedButton variant="ghost" size="sm" onClick={onBack} className="flex-shrink-0">
                 <ArrowLeft className="w-4 h-4" />
               </AnimatedButton>
               
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-electric to-electric-glow flex items-center justify-center">
-                  <Bot className="w-5 h-5 text-primary-foreground" />
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-electric to-electric-glow flex items-center justify-center flex-shrink-0">
+                  <Bot className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
                 </div>
-                <div>
-                  <h3 className="font-display font-semibold text-foreground">
+                <div className="min-w-0">
+                  <h3 className="font-display font-semibold text-foreground text-sm sm:text-base truncate">
                     {course?.shortName} AI
                   </h3>
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                    Online • {faculty?.shortName}
+                  <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
+                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse flex-shrink-0" />
+                    <span className="truncate">Online • {faculty?.shortName}</span>
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
               <AnimatedButton 
                 variant="ghost" 
                 size="sm" 
@@ -359,7 +560,7 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
         </motion.div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto space-y-3 sm:space-y-4 mb-2 sm:mb-4 px-2 sm:px-0 custom-scrollbar">
           <AnimatePresence>
             {messages.map((message, index) => (
               <motion.div
@@ -368,30 +569,92 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ delay: index * 0.05 }}
-                className={`flex gap-3 ${message.role === 'user' ? 'flex-row-reverse' : ''}`}
+                className={`flex gap-2 sm:gap-3 ${message.role === 'user' ? 'flex-row-reverse' : ''}`}
               >
-                <div className={`w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center ${
+                <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex-shrink-0 flex items-center justify-center ${
                   message.role === 'user' 
                     ? 'bg-electric' 
                     : 'bg-gradient-to-br from-electric/20 to-electric-glow/20 border border-electric/30'
                 }`}>
                   {message.role === 'user' 
-                    ? <User className="w-4 h-4 text-primary-foreground" />
-                    : <Sparkles className="w-4 h-4 text-electric" />
+                    ? <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary-foreground" />
+                    : <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-electric" />
                   }
                 </div>
                 
-                <div className={`max-w-[80%] ${
-                  message.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'
+                <div className={`flex-1 group ${
+                  message.role === 'user' ? 'flex flex-col items-end' : ''
                 }`}>
-                  <div className="whitespace-pre-wrap text-sm">
-                    {renderContent(message.content)}
-                  </div>
-                  <div className={`text-xs mt-2 ${
-                    message.role === 'user' ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                  <div className={`max-w-[95%] sm:max-w-[80%] ${
+                    message.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'
                   }`}>
-                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    <div className="whitespace-pre-wrap text-xs sm:text-sm leading-relaxed">
+                      {renderContent(message.content)}
+                    </div>
+                    <div className={`text-xs mt-1.5 sm:mt-2 ${
+                      message.role === 'user' ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                    }`}>
+                      {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </div>
                   </div>
+
+                  {/* Message Actions - AI responses only */}
+                  {message.role === 'assistant' && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="flex gap-2 mt-2 flex-wrap"
+                    >
+                      <button
+                        onClick={() => handleCopyMessage(message.content, message.id)}
+                        className="p-1.5 sm:p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground text-xs sm:text-sm"
+                        title="Copy message"
+                      >
+                        {copiedMessageId === message.id ? '✓ Copied' : <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+                      </button>
+
+                      <button
+                        onClick={() => handleTextToSpeech(message.content, message.id)}
+                        className={`p-1.5 sm:p-2 rounded-lg transition-colors text-xs sm:text-sm ${
+                          tts.messageId === message.id
+                            ? 'bg-electric/20 text-electric'
+                            : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+                        }`}
+                        title={tts.messageId === message.id ? 'Stop listening' : 'Read aloud'}
+                      >
+                        {tts.messageId === message.id ? (
+                          <Square className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        ) : (
+                          <Volume2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        )}
+                      </button>
+
+                      <div className="relative group/download">
+                        <button
+                          className="p-1.5 sm:p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground text-xs sm:text-sm"
+                          title="Download options"
+                        >
+                          <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        </button>
+                        
+                        {/* Download dropdown */}
+                        <div className="hidden group-hover/download:block absolute right-0 mt-2 bg-muted border border-border rounded-lg shadow-lg z-50">
+                          <button
+                            onClick={() => handleDownloadWord(message.content)}
+                            className="block w-full text-left px-3 sm:px-4 py-2 text-xs sm:text-sm hover:bg-electric/20 rounded-lg transition-colors whitespace-nowrap"
+                          >
+                            Word (.doc)
+                          </button>
+                          <button
+                            onClick={() => handleDownloadPDF(message.content)}
+                            className="block w-full text-left px-3 sm:px-4 py-2 text-xs sm:text-sm hover:bg-electric/20 rounded-lg transition-colors whitespace-nowrap"
+                          >
+                            PDF
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
                 </div>
               </motion.div>
             ))}
@@ -436,9 +699,9 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           onSubmit={handleSubmit}
-          className="glass-card p-4"
+          className="glass-card p-2 sm:p-4 flex-shrink-0"
         >
-          <div className="flex gap-3">
+          <div className="flex gap-2 sm:gap-3">
             <div className="flex-1 relative">
               <textarea
                 ref={inputRef}
@@ -446,20 +709,21 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder={`Ask about ${course?.shortName}...`}
-                className="w-full bg-muted/50 border border-border rounded-xl px-4 py-3 pr-12 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-electric/50 focus:border-electric/50 resize-none min-h-[52px] max-h-32"
+                className="w-full bg-muted/50 border border-border rounded-xl px-3 sm:px-4 py-2 sm:py-3 pr-10 sm:pr-12 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-electric/50 focus:border-electric/50 resize-none min-h-[44px] sm:min-h-[52px] max-h-28 sm:max-h-32"
                 rows={1}
               />
             </div>
             <AnimatedButton
               type="submit"
               disabled={!input.trim() || isTyping}
-              className="self-end"
+              className="self-end flex-shrink-0 px-3 sm:px-6"
+              size="sm"
             >
-              <Send className="w-5 h-5" />
+              <Send className="w-4 h-4 sm:w-5 sm:h-5" />
             </AnimatedButton>
           </div>
-          <p className="text-xs text-muted-foreground mt-2 text-center">
-            Press Enter to send • Shift + Enter for new line
+          <p className="text-xs text-muted-foreground mt-1.5 sm:mt-2 text-center">
+            Enter to send • Shift + Enter for new line
           </p>
         </motion.form>
       </div>
