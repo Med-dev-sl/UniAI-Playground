@@ -53,6 +53,7 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
   const [isTyping, setIsTyping] = useState(false);
   const [tts, setTts] = useState<TextToSpeechState>({ messageId: null, isPlaying: false });
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+  const [showDownloadMenu, setShowDownloadMenu] = useState<string | null>(null);
   const isCourseFavorite = isFavorite(courseId);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -554,7 +555,10 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
         </motion.div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto space-y-3 sm:space-y-4 mb-2 sm:mb-4 px-2 sm:px-0 custom-scrollbar">
+        <div 
+          className="flex-1 overflow-y-auto space-y-3 sm:space-y-4 mb-2 sm:mb-4 px-2 sm:px-0 custom-scrollbar"
+          onClick={() => setShowDownloadMenu(null)}
+        >
           <AnimatePresence>
             {messages.map((message, index) => (
               <motion.div
@@ -579,7 +583,7 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
                 <div className={`flex-1 group ${
                   message.role === 'user' ? 'flex flex-col items-end' : ''
                 }`}>
-                  <div className={`max-w-[95%] sm:max-w-[80%] ${
+                  <div className={`max-w-[95%] sm:max-w-[80%] break-words ${
                     message.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'
                   }`}>
                     <div className="whitespace-pre-wrap text-xs sm:text-sm leading-relaxed">
@@ -597,22 +601,28 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="flex gap-2 mt-2 flex-wrap"
+                      className="flex gap-1 sm:gap-2 mt-1.5 sm:mt-2 flex-wrap"
                     >
+                      {/* Copy Button */}
                       <button
                         onClick={() => handleCopyMessage(message.content, message.id)}
-                        className="p-1.5 sm:p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground text-xs sm:text-sm"
+                        className="p-2 sm:p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground active:bg-electric/20"
                         title="Copy message"
                       >
-                        {copiedMessageId === message.id ? '✓ Copied' : <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+                        {copiedMessageId === message.id ? (
+                          <span className="text-xs font-semibold">✓</span>
+                        ) : (
+                          <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        )}
                       </button>
 
+                      {/* Text-to-Speech Button */}
                       <button
                         onClick={() => handleTextToSpeech(message.content, message.id)}
-                        className={`p-1.5 sm:p-2 rounded-lg transition-colors text-xs sm:text-sm ${
+                        className={`p-2 sm:p-2 rounded-lg transition-colors ${
                           tts.messageId === message.id
                             ? 'bg-electric/20 text-electric'
-                            : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+                            : 'hover:bg-muted text-muted-foreground hover:text-foreground active:bg-electric/20'
                         }`}
                         title={tts.messageId === message.id ? 'Stop listening' : 'Read aloud'}
                       >
@@ -623,29 +633,53 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
                         )}
                       </button>
 
-                      <div className="relative group/download">
+                      {/* Download Button */}
+                      <div className="relative z-50">
                         <button
-                          className="p-1.5 sm:p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground text-xs sm:text-sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowDownloadMenu(showDownloadMenu === message.id ? null : message.id);
+                          }}
+                          className="p-2 sm:p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground active:bg-electric/20"
                           title="Download options"
                         >
                           <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         </button>
                         
-                        {/* Download dropdown */}
-                        <div className="hidden group-hover/download:block absolute right-0 mt-2 bg-muted border border-border rounded-lg shadow-lg z-50">
-                          <button
-                            onClick={() => handleDownloadWord(message.content)}
-                            className="block w-full text-left px-3 sm:px-4 py-2 text-xs sm:text-sm hover:bg-electric/20 rounded-lg transition-colors whitespace-nowrap"
-                          >
-                            Word (.doc)
-                          </button>
-                          <button
-                            onClick={() => handleDownloadPDF(message.content)}
-                            className="block w-full text-left px-3 sm:px-4 py-2 text-xs sm:text-sm hover:bg-electric/20 rounded-lg transition-colors whitespace-nowrap"
-                          >
-                            PDF
-                          </button>
-                        </div>
+                        {/* Download Dropdown Menu */}
+                        <AnimatePresence>
+                          {showDownloadMenu === message.id && (
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.9, y: -5 }}
+                              animate={{ opacity: 1, scale: 1, y: 0 }}
+                              exit={{ opacity: 0, scale: 0.9, y: -5 }}
+                              transition={{ duration: 0.15 }}
+                              className="absolute right-0 mt-2 bg-muted border border-border rounded-lg shadow-lg z-50 min-w-max pointer-events-auto"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDownloadWord(message.content);
+                                  setShowDownloadMenu(null);
+                                }}
+                                className="block w-full text-left px-3 sm:px-4 py-2.5 text-xs sm:text-sm hover:bg-electric/20 active:bg-electric/30 transition-colors whitespace-nowrap"
+                              >
+                                Word (.doc)
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDownloadPDF(message.content);
+                                  setShowDownloadMenu(null);
+                                }}
+                                className="block w-full text-left px-3 sm:px-4 py-2.5 text-xs sm:text-sm hover:bg-electric/20 active:bg-electric/30 transition-colors whitespace-nowrap"
+                              >
+                                PDF
+                              </button>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
                     </motion.div>
                   )}
