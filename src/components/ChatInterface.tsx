@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, ArrowLeft, Bot, User, Sparkles, RefreshCw, History, Star, Copy, Download, Volume2, Square } from 'lucide-react';
+import { Send, ArrowLeft, Bot, User, Sparkles, RefreshCw, History, Star, Copy, FileText, Volume2, DownloadCloud } from 'lucide-react';
 import { AnimatedButton } from './ui/AnimatedButton';
 import { getCourseById, getFacultyById } from '@/data/courses';
 import { useToast } from '@/hooks/use-toast';
@@ -19,11 +19,6 @@ interface Message {
 interface ChatInterfaceProps {
   courseId: string;
   onBack: () => void;
-}
-
-interface TextToSpeechState {
-  messageId: string | null;
-  isPlaying: boolean;
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/course-chat`;
@@ -51,14 +46,10 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [tts, setTts] = useState<TextToSpeechState>({ messageId: null, isPlaying: false });
-  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
-  const [showDownloadMenu, setShowDownloadMenu] = useState<string | null>(null);
   const isCourseFavorite = isFavorite(courseId);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   const getWelcomeMessage = (): Message => ({
     id: 'welcome',
@@ -277,186 +268,77 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
     setShowHistory(false);
   };
 
-  const cleanContent = (content: string) => {
-    return content
-      .replace(/###\s*/g, '') // Remove ### hashtags
-      .replace(/\*\*/g, ''); // Remove ** asterisks
-  };
-
   const renderContent = (content: string) => {
-    const cleaned = cleanContent(content);
-    return cleaned;
+    return content.split('**').map((part, i) => 
+      i % 2 === 1 ? <strong key={i}>{part}</strong> : part
+    );
   };
 
-  // Copy to clipboard
-  const handleCopyMessage = (content: string, messageId: string) => {
-    const cleaned = cleanContent(content);
-    navigator.clipboard.writeText(cleaned).then(() => {
-      setCopiedMessageId(messageId);
-      toast({
-        title: "Copied!",
-        description: "Message copied to clipboard",
-      });
-      setTimeout(() => setCopiedMessageId(null), 2000);
-    }).catch(() => {
-      toast({
-        title: "Error",
-        description: "Failed to copy message",
-        variant: "destructive",
-      });
-    });
-  };
-
-  // Download as Word Document
-  const handleDownloadWord = (content: string) => {
-    const cleaned = cleanContent(content);
-    const htmlContent = `
-      <html>
-        <head>
-          <meta charset="UTF-8" />
-          <title>${course?.shortName} - Chat Response</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
-            h1 { color: #333; }
-            .meta { color: #666; font-size: 0.9em; margin-bottom: 20px; }
-            .content { white-space: pre-wrap; word-wrap: break-word; }
-          </style>
-        </head>
-        <body>
-          <h1>${course?.shortName} - AI Response</h1>
-          <div class="meta">
-            <p>Course: ${course?.name}</p>
-            <p>Faculty: ${faculty?.name || 'N/A'}</p>
-            <p>Date: ${new Date().toLocaleString()}</p>
-          </div>
-          <div class="content">${cleaned.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
-        </body>
-      </html>
-    `;
-    
-    const blob = new Blob([htmlContent], { type: 'application/msword' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${course?.shortName}-response-${Date.now()}.doc`;
-    link.click();
-    URL.revokeObjectURL(url);
-    
-    toast({
-      title: "Downloaded!",
-      description: "Response saved as Word document",
-    });
-  };
-
-  // Download as PDF
-  const handleDownloadPDF = (content: string) => {
+  // Clipboard
+  const copyToClipboard = async (text: string) => {
     try {
-      const cleaned = cleanContent(content);
-      // Create a complete HTML-based PDF with full content
-      const htmlContent = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>${course?.shortName} - Chat Response</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: Arial, sans-serif; padding: 40px; line-height: 1.8; font-size: 12px; color: #333; }
-    h1 { font-size: 24px; margin-bottom: 20px; color: #000; }
-    .meta { background: #f5f5f5; padding: 15px; margin-bottom: 30px; border-radius: 5px; font-size: 11px; }
-    .meta p { margin: 5px 0; }
-    .content { white-space: pre-wrap; word-break: break-word; font-size: 12px; line-height: 1.8; }
-  </style>
-</head>
-<body>
-  <h1>${course?.shortName} - AI Response</h1>
-  <div class="meta">
-    <p><strong>Course:</strong> ${course?.name}</p>
-    <p><strong>Faculty:</strong> ${faculty?.name || 'N/A'}</p>
-    <p><strong>Date:</strong> ${new Date().toLocaleString()}</p>
-  </div>
-  <div class="content">${cleaned}</div>
-</body>
-</html>`;
-      
-      // Create a blob and download as PDF
-      const blob = new Blob([htmlContent], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${course?.shortName}-response-${Date.now()}.pdf`;
-      link.click();
-      URL.revokeObjectURL(url);
-      
-      toast({
-        title: "Downloaded!",
-        description: "Response saved as PDF",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to download PDF",
-        variant: "destructive",
-      });
+      await navigator.clipboard.writeText(text);
+      toast({ title: 'Copied', description: 'AI response copied to clipboard.' });
+    } catch (e) {
+      toast({ title: 'Copy failed', description: 'Unable to copy to clipboard.', variant: 'destructive' });
     }
   };
 
-  // Text to Speech with female voice
-  const handleTextToSpeech = (content: string, messageId: string) => {
-    if (window.speechSynthesis.speaking) {
-      window.speechSynthesis.cancel();
-      setTts({ messageId: null, isPlaying: false });
+  // Download as Word (.doc) using HTML blob which Word can open
+  const downloadAsWord = (text: string, filename = 'uniai-response') => {
+    const html = `<!doctype html><html><head><meta charset="utf-8"></head><body>${text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/\n/g, '<br/>')}</body></html>`;
+    const blob = new Blob([html], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${filename}.doc`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  // Printable PDF via print dialog (user can choose Save as PDF)
+  const downloadAsPdf = (text: string, filename = 'uniai-response') => {
+    const w = window.open('', '_blank');
+    if (!w) {
+      toast({ title: 'Popup blocked', description: 'Unable to open print window.', variant: 'destructive' });
       return;
     }
-
-    // Clean content for speech
-    const cleanContent = content
-      .replace(/\*\*/g, '')
-      .replace(/\n/g, ' ')
-      .replace(/\s+/g, ' ');
-
-    const utterance = new SpeechSynthesisUtterance(cleanContent);
-    utterance.rate = 0.9; // Slightly slow (0.5-2, default 1)
-    utterance.pitch = 1.2; // Slightly higher pitch for female voice
-    utterance.volume = 1;
-
-    // Load voices and select a female voice
-    const loadVoicesAndSpeak = () => {
-      const voices = window.speechSynthesis.getVoices();
-      const femaleVoice = voices.find(voice => 
-        voice.name.toLowerCase().includes('female') || 
-        voice.name.toLowerCase().includes('woman') ||
-        voice.name.includes('Google US English Female') ||
-        voice.name.includes('Samantha') ||
-        voice.name.includes('Victoria') ||
-        voice.name.includes('Karen')
-      ) || voices.find(voice => voice.name.toLowerCase().includes('female')) || voices[1] || voices[0];
-
-      if (femaleVoice) {
-        utterance.voice = femaleVoice;
-      }
-
-      utterance.onend = () => {
-        setTts({ messageId: null, isPlaying: false });
-      };
-
-      utteranceRef.current = utterance;
-      window.speechSynthesis.speak(utterance);
-      setTts({ messageId, isPlaying: true });
-    };
-
-    // Some browsers need a delay for voices to load
-    if (window.speechSynthesis.getVoices().length === 0) {
-      window.speechSynthesis.onvoiceschanged = loadVoicesAndSpeak;
-    } else {
-      loadVoicesAndSpeak();
-    }
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>${filename}</title><style>body{font-family:Inter, Arial, sans-serif;padding:24px;color:#111} pre{white-space:pre-wrap;font-family:inherit}</style></head><body><pre>${text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre></body></html>`;
+    w.document.write(html);
+    w.document.close();
+    w.focus();
+    // Give the new window a moment to render before calling print
+    setTimeout(() => w.print(), 300);
   };
 
-  // Stop speech
-  const handleStopSpeech = () => {
+  // Text to Speech (female voice preferred)
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const speak = (text: string) => {
+    if (!('speechSynthesis' in window)) {
+      toast({ title: 'Not supported', description: 'Speech synthesis is not supported in this browser.' });
+      return;
+    }
     window.speechSynthesis.cancel();
-    setTts({ messageId: null, isPlaying: false });
+    const u = new SpeechSynthesisUtterance(text.replace(/\*\*/g, ''));
+    // choose a female voice if available
+    const voices = window.speechSynthesis.getVoices();
+    let voice = voices.find(v => /female/i.test(v.name)) || voices.find(v => v.lang.startsWith('en')) || voices[0];
+    if (voice) u.voice = voice;
+    u.rate = 1; // not too fast or slow
+    u.pitch = 1;
+    utteranceRef.current = u;
+    window.speechSynthesis.speak(u);
+  };
+
+  const stopSpeaking = () => {
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    utteranceRef.current = null;
   };
 
   if (historyLoading) {
@@ -468,35 +350,24 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
   }
 
   return (
-    <div className="flex gap-2 sm:gap-4 h-[calc(100vh-8rem)] max-h-[800px] flex-col sm:flex-row">
-      {/* Conversation History Sidebar - Mobile Drawer */}
+    <div className="flex gap-4 h-[calc(100vh-8rem)] max-h-[800px]">
+      {/* Conversation History Sidebar */}
       <AnimatePresence>
         {showHistory && (
-          <>
-            {/* Mobile overlay */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowHistory(false)}
-              className="fixed inset-0 bg-black/50 z-40 sm:hidden"
+          <motion.div
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: 280, opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            className="flex-shrink-0 overflow-hidden"
+          >
+            <ConversationHistory
+              conversations={conversations}
+              currentConversationId={conversation?.id}
+              onSelect={handleSelectConversation}
+              onNew={handleNewChat}
+              onDelete={deleteConversation}
             />
-            {/* Sidebar */}
-            <motion.div
-              initial={{ x: -300, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: -300, opacity: 0 }}
-              className="fixed left-0 top-0 bottom-0 z-50 sm:relative sm:z-auto overflow-hidden"
-            >
-              <ConversationHistory
-                conversations={conversations}
-                currentConversationId={conversation?.id}
-                onSelect={handleSelectConversation}
-                onNew={handleNewChat}
-                onDelete={deleteConversation}
-              />
-            </motion.div>
-          </>
+          </motion.div>
         )}
       </AnimatePresence>
 
@@ -506,31 +377,31 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass-card p-3 sm:p-4 mb-2 sm:mb-4 flex-shrink-0"
+          className="glass-card p-4 mb-4"
         >
-          <div className="flex items-center justify-between gap-2 sm:gap-4">
-            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-              <AnimatedButton variant="ghost" size="sm" onClick={onBack} className="flex-shrink-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <AnimatedButton variant="ghost" size="sm" onClick={onBack}>
                 <ArrowLeft className="w-4 h-4" />
               </AnimatedButton>
               
-              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-electric to-electric-glow flex items-center justify-center flex-shrink-0">
-                  <Bot className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-electric to-electric-glow flex items-center justify-center">
+                  <Bot className="w-5 h-5 text-primary-foreground" />
                 </div>
-                <div className="min-w-0">
-                  <h3 className="font-display font-semibold text-foreground text-sm sm:text-base truncate">
+                <div>
+                  <h3 className="font-display font-semibold text-foreground">
                     {course?.shortName} AI
                   </h3>
-                  <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
-                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse flex-shrink-0" />
-                    <span className="truncate">Online • {faculty?.shortName}</span>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                    Online • {faculty?.shortName}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+            <div className="flex items-center gap-2">
               <AnimatedButton 
                 variant="ghost" 
                 size="sm" 
@@ -555,10 +426,7 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
         </motion.div>
 
         {/* Messages */}
-        <div 
-          className="flex-1 overflow-y-auto space-y-3 sm:space-y-4 mb-2 sm:mb-4 px-2 sm:px-0 custom-scrollbar"
-          onClick={() => setShowDownloadMenu(null)}
-        >
+        <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2 custom-scrollbar">
           <AnimatePresence>
             {messages.map((message, index) => (
               <motion.div
@@ -567,122 +435,76 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ delay: index * 0.05 }}
-                className={`flex gap-2 sm:gap-3 ${message.role === 'user' ? 'flex-row-reverse' : ''}`}
+                className={`flex gap-3 ${message.role === 'user' ? 'flex-row-reverse' : ''}`}
               >
-                <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex-shrink-0 flex items-center justify-center ${
+                <div className={`w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center ${
                   message.role === 'user' 
                     ? 'bg-electric' 
                     : 'bg-gradient-to-br from-electric/20 to-electric-glow/20 border border-electric/30'
                 }`}>
                   {message.role === 'user' 
-                    ? <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary-foreground" />
-                    : <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-electric" />
+                    ? <User className="w-4 h-4 text-primary-foreground" />
+                    : <Sparkles className="w-4 h-4 text-electric" />
                   }
                 </div>
                 
-                <div className={`flex-1 group ${
-                  message.role === 'user' ? 'flex flex-col items-end' : ''
+                <div className={`max-w-[80%] sm:max-w-[70%] md:max-w-[60%] ${
+                  message.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'
                 }`}>
-                  <div className={`max-w-[95%] sm:max-w-[80%] break-words ${
-                    message.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'
-                  }`}>
-                    <div className="whitespace-pre-wrap text-xs sm:text-sm leading-relaxed">
-                      {renderContent(message.content)}
-                    </div>
-                    <div className={`text-xs mt-1.5 sm:mt-2 ${
-                      message.role === 'user' ? 'text-primary-foreground/70' : 'text-muted-foreground'
-                    }`}>
-                      {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </div>
+                  <div className="whitespace-pre-wrap text-sm">
+                    {renderContent(message.content)}
                   </div>
 
-                  {/* Message Actions - AI responses only */}
+                  {/* Assistant controls: copy, download, pdf, tts */}
                   {message.role === 'assistant' && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="flex gap-1 sm:gap-2 mt-1.5 sm:mt-2 flex-wrap"
-                    >
-                      {/* Copy Button */}
+                    <div className="flex items-center gap-2 mt-3 flex-wrap">
                       <button
-                        onClick={() => handleCopyMessage(message.content, message.id)}
-                        className="p-2 sm:p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground active:bg-electric/20"
-                        title="Copy message"
+                        onClick={() => copyToClipboard(message.content)}
+                        className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                        aria-label="Copy response"
                       >
-                        {copiedMessageId === message.id ? (
-                          <span className="text-xs font-semibold">✓</span>
-                        ) : (
-                          <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                        )}
+                        <Copy className="w-4 h-4" /> Copy
                       </button>
 
-                      {/* Text-to-Speech Button */}
                       <button
-                        onClick={() => handleTextToSpeech(message.content, message.id)}
-                        className={`p-2 sm:p-2 rounded-lg transition-colors ${
-                          tts.messageId === message.id
-                            ? 'bg-electric/20 text-electric'
-                            : 'hover:bg-muted text-muted-foreground hover:text-foreground active:bg-electric/20'
-                        }`}
-                        title={tts.messageId === message.id ? 'Stop listening' : 'Read aloud'}
+                        onClick={() => downloadAsWord(message.content, `uniai-response-${message.id}`)}
+                        className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                        aria-label="Download as Word"
                       >
-                        {tts.messageId === message.id ? (
-                          <Square className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                        ) : (
-                          <Volume2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                        )}
+                        <FileText className="w-4 h-4" /> Word
                       </button>
 
-                      {/* Download Button */}
-                      <div className="relative z-50">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setShowDownloadMenu(showDownloadMenu === message.id ? null : message.id);
-                          }}
-                          className="p-2 sm:p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground active:bg-electric/20"
-                          title="Download options"
-                        >
-                          <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                        </button>
-                        
-                        {/* Download Dropdown Menu */}
-                        <AnimatePresence>
-                          {showDownloadMenu === message.id && (
-                            <motion.div
-                              initial={{ opacity: 0, scale: 0.9, y: -5 }}
-                              animate={{ opacity: 1, scale: 1, y: 0 }}
-                              exit={{ opacity: 0, scale: 0.9, y: -5 }}
-                              transition={{ duration: 0.15 }}
-                              className="absolute right-0 mt-2 bg-muted border border-border rounded-lg shadow-lg z-50 min-w-max pointer-events-auto"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDownloadWord(message.content);
-                                  setShowDownloadMenu(null);
-                                }}
-                                className="block w-full text-left px-3 sm:px-4 py-2.5 text-xs sm:text-sm hover:bg-electric/20 active:bg-electric/30 transition-colors whitespace-nowrap"
-                              >
-                                Word (.doc)
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDownloadPDF(message.content);
-                                  setShowDownloadMenu(null);
-                                }}
-                                className="block w-full text-left px-3 sm:px-4 py-2.5 text-xs sm:text-sm hover:bg-electric/20 active:bg-electric/30 transition-colors whitespace-nowrap"
-                              >
-                                PDF
-                              </button>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    </motion.div>
+                      <button
+                        onClick={() => downloadAsPdf(message.content, `uniai-response-${message.id}`)}
+                        className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                        aria-label="Download as PDF"
+                      >
+                        <DownloadCloud className="w-4 h-4" /> PDF
+                      </button>
+
+                      <button
+                        onClick={() => speak(message.content)}
+                        className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                        aria-label="Play response"
+                      >
+                        <Volume2 className="w-4 h-4" /> Listen
+                      </button>
+
+                      <button
+                        onClick={stopSpeaking}
+                        className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                        aria-label="Stop speech"
+                      >
+                        Stop
+                      </button>
+                    </div>
                   )}
+
+                  <div className={`text-xs mt-2 ${
+                    message.role === 'user' ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                  }`}>
+                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </div>
                 </div>
               </motion.div>
             ))}
@@ -727,9 +549,9 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           onSubmit={handleSubmit}
-          className="glass-card p-2 sm:p-4 flex-shrink-0"
+          className="glass-card p-4"
         >
-          <div className="flex gap-2 sm:gap-3">
+          <div className="flex gap-3">
             <div className="flex-1 relative">
               <textarea
                 ref={inputRef}
@@ -737,21 +559,20 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder={`Ask about ${course?.shortName}...`}
-                className="w-full bg-muted/50 border border-border rounded-xl px-3 sm:px-4 py-2 sm:py-3 pr-10 sm:pr-12 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-electric/50 focus:border-electric/50 resize-none min-h-[44px] sm:min-h-[52px] max-h-28 sm:max-h-32"
+                className="w-full bg-muted/50 border border-border rounded-xl px-4 py-3 pr-12 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-electric/50 focus:border-electric/50 resize-none min-h-[52px] max-h-32"
                 rows={1}
               />
             </div>
             <AnimatedButton
               type="submit"
               disabled={!input.trim() || isTyping}
-              className="self-end flex-shrink-0 px-3 sm:px-6"
-              size="sm"
+              className="self-end"
             >
-              <Send className="w-4 h-4 sm:w-5 sm:h-5" />
+              <Send className="w-5 h-5" />
             </AnimatedButton>
           </div>
-          <p className="text-xs text-muted-foreground mt-1.5 sm:mt-2 text-center">
-            Enter to send • Shift + Enter for new line
+          <p className="text-xs text-muted-foreground mt-2 text-center">
+            Press Enter to send • Shift + Enter for new line
           </p>
         </motion.form>
       </div>
