@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Sparkles, ArrowRight, GraduationCap, Users, Brain } from 'lucide-react';
+import { Sparkles, ArrowRight, GraduationCap, Users, Brain, Download } from 'lucide-react';
 import { AnimatedButton } from './ui/AnimatedButton';
 
 interface HeroSectionProps {
@@ -94,17 +94,27 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
           <span className="text-foreground"> Ask questions, get instant answers, and excel in your studies.</span>
         </motion.p>
 
-        {/* CTA Button */}
+        {/* CTA Buttons */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
           className="mb-16"
         >
-          <AnimatedButton size="lg" onClick={onGetStarted}>
-            Get Started
-            <ArrowRight className="w-5 h-5" />
-          </AnimatedButton>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <AnimatedButton size="lg" variant="secondary" onClick={onGetStarted}>
+              Get Started
+              <ArrowRight className="w-5 h-5" />
+            </AnimatedButton>
+
+            <AnimatedButton
+              size="lg"
+              onClick={() => window.open('https://apk.e-droid.net/apk/app3905731-h6trgj.apk?v=1', '_blank', 'noopener,noreferrer')}
+            >
+              <Download className="w-5 h-5" />
+              Download App
+            </AnimatedButton>
+          </div>
         </motion.div>
 
         {/* Stats */}

@@ -23,7 +23,7 @@ const AppDownloadModal = () => {
 
     const interval = setInterval(() => {
       setIsOpen(true);
-    }, 10000); // 10 seconds
+    }, 100000); // 10 seconds
 
     return () => clearInterval(interval);
   }, [hasDownloaded]);
