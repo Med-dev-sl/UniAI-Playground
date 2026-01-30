@@ -1,8 +1,13 @@
+# UniAI Playground robots.txt
+# Allow all search engines to crawl the site
+
 User-agent: Googlebot
 Allow: /
+Crawl-delay: 0
 
 User-agent: Bingbot
 Allow: /
+Crawl-delay: 1
 
 User-agent: Twitterbot
 Allow: /
@@ -12,3 +17,11 @@ Allow: /
 
 User-agent: *
 Allow: /
+Disallow: /admin/
+Disallow: /private/
+
+# Sitemap location
+Sitemap: https://uniai.com/sitemap.xml
+
+# Host
+Host: https://uniai.com
