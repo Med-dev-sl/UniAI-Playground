@@ -1,5 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
+// Mistral API configuration
+const MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
@@ -26,9 +29,9 @@ serve(async (req) => {
   }
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    const MISTRAL_API_KEY = Deno.env.get("MISTRAL_API_KEY");
+    if (!MISTRAL_API_KEY) {
+      throw new Error("MISTRAL_API_KEY is not configured");
     }
 
     const { messages, courseName, courseLevel, facultyName, courseDescription }: RequestBody = await req.json();
@@ -61,14 +64,14 @@ GUIDELINES:
 
 Remember: You are here to help students succeed in their "${courseName}" studies!`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch(MISTRAL_API_URL, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${MISTRAL_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "mistral-small-latest",
         messages: [
           { role: "system", content: systemPrompt },
           ...messages,
@@ -80,26 +83,17 @@ Remember: You are here to help students succeed in their "${courseName}" studies
     if (!response.ok) {
       if (response.status === 429) {
         return new Response(
-          JSON.stringify({ error: "Rate limits exceeded. Please try again in a moment." }),
+          JSON.stringify({ error: "Mistral rate limit exceeded. Please try again in a moment." }),
           {
             status: 429,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           }
         );
       }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "AI usage limit reached. Please add credits to continue." }),
-          {
-            status: 402,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
-        );
-      }
       const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
+      console.error("Mistral API error:", response.status, errorText);
       return new Response(
-        JSON.stringify({ error: "Failed to get AI response" }),
+        JSON.stringify({ error: "Failed to get AI response from Mistral" }),
         {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
