@@ -34,8 +34,8 @@ const AppDownloadModal = () => {
     setHasDownloaded(true);
     setIsOpen(false);
 
-    // Open download link in new tab
-    window.open("https://www.appcreator24.com/app3905731-h6trgj", "_blank");
+    // Download APK file
+    window.open("/app3905731_2953.apk", "_blank");
   };
 
   const handleClose = () => {

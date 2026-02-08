@@ -26,7 +26,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
       // ignore
     }
     setHasDownloaded(true);
-    window.open('https://www.appcreator24.com/app3905731-h6trgj', '_blank', 'noopener,noreferrer');
+    window.open('/app3905731_2953.apk', '_blank');
   };
   const stats = [
     { icon: GraduationCap, value: '8', label: 'Faculties' },
