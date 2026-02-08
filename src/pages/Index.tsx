@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { FloatingOrbs } from '@/components/ui/FloatingOrbs';
@@ -15,14 +15,61 @@ import { useAuth } from '@/hooks/useAuth';
 
 type Step = 'hero' | 'level' | 'faculty' | 'course' | 'chat';
 
+const STORAGE_KEY = 'uniai-selection';
+
+interface SavedSelection {
+  level: ProgramLevel;
+  faculty: string;
+  course: string;
+}
+
+function loadSelection(): SavedSelection | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed.level && parsed.faculty && parsed.course) return parsed;
+  } catch { /* ignore */ }
+  return null;
+}
+
+function saveSelection(level: ProgramLevel, faculty: string, course: string) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ level, faculty, course }));
+  } catch { /* ignore */ }
+}
+
+function clearSelection() {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch { /* ignore */ }
+}
+
 const Index = () => {
-  const [step, setStep] = useState<Step>('hero');
-  const [selectedLevel, setSelectedLevel] = useState<ProgramLevel | null>(null);
-  const [selectedFaculty, setSelectedFaculty] = useState<string | null>(null);
-  const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
-  
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+
+  // Restore saved selection on mount
+  const saved = loadSelection();
+  const canResume = saved && user;
+
+  const [step, setStep] = useState<Step>(canResume ? 'chat' : 'hero');
+  const [selectedLevel, setSelectedLevel] = useState<ProgramLevel | null>(canResume ? saved!.level : null);
+  const [selectedFaculty, setSelectedFaculty] = useState<string | null>(canResume ? saved!.faculty : null);
+  const [selectedCourse, setSelectedCourse] = useState<string | null>(canResume ? saved!.course : null);
+
+  // If user logs in after selection was saved, resume to chat
+  useEffect(() => {
+    if (!loading && user && step === 'hero') {
+      const s = loadSelection();
+      if (s) {
+        setSelectedLevel(s.level);
+        setSelectedFaculty(s.faculty);
+        setSelectedCourse(s.course);
+        setStep('chat');
+      }
+    }
+  }, [loading, user]);
 
   const handleLevelSelect = (level: ProgramLevel) => {
     setSelectedLevel(level);
@@ -48,12 +95,16 @@ const Index = () => {
         if (selectedFaculty) setStep('course');
         break;
       case 'course':
-        if (selectedCourse) {
+        if (selectedCourse && selectedLevel && selectedFaculty) {
           // Require login before chat
           if (!user) {
+            // Save selection so it persists after login
+            saveSelection(selectedLevel, selectedFaculty, selectedCourse);
             navigate('/auth');
             return;
           }
+          // Persist selection
+          saveSelection(selectedLevel, selectedFaculty, selectedCourse);
           setStep('chat');
         }
         break;
@@ -81,7 +132,16 @@ const Index = () => {
     setSelectedLevel(null);
     setSelectedFaculty(null);
     setSelectedCourse(null);
+    clearSelection();
   };
+
+  const handleChangeCourse = useCallback(() => {
+    clearSelection();
+    setStep('level');
+    setSelectedLevel(null);
+    setSelectedFaculty(null);
+    setSelectedCourse(null);
+  }, []);
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
@@ -94,8 +154,8 @@ const Index = () => {
         className="fixed top-0 left-0 right-0 z-50 px-6 py-4"
       >
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <button onClick={resetToStart} className="focus:outline-none">
-            <img src="/logo.png" alt="Platform Logo" className="w-40 h-40" />
+          <button onClick={resetToStart} className="focus:outline-none flex-shrink-0">
+            <img src="/logo.png" alt="Platform Logo" className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40" />
           </button>
           
           <div className="flex items-center gap-4">
@@ -135,7 +195,7 @@ const Index = () => {
       </motion.header>
 
       {/* Main Content */}
-      <main className="relative z-10 pt-20 pb-8">
+      <main className="relative z-10 pt-16 sm:pt-20 pb-4 sm:pb-8">
         <AnimatePresence mode="wait">
           {step === 'hero' && (
             <motion.div
@@ -156,7 +216,7 @@ const Index = () => {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -100 }}
               transition={{ duration: 0.3 }}
-              className="container max-w-6xl mx-auto px-4 py-12"
+              className="container max-w-6xl mx-auto px-3 sm:px-4 py-6 sm:py-12"
             >
               <LevelSelector
                 selectedLevel={selectedLevel}
@@ -185,7 +245,7 @@ const Index = () => {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -100 }}
               transition={{ duration: 0.3 }}
-              className="container max-w-7xl mx-auto px-4 py-12"
+              className="container max-w-7xl mx-auto px-3 sm:px-4 py-6 sm:py-12"
             >
               <FacultySelector
                 level={selectedLevel}
@@ -216,7 +276,7 @@ const Index = () => {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -100 }}
               transition={{ duration: 0.3 }}
-              className="container max-w-5xl mx-auto px-4 py-12"
+              className="container max-w-5xl mx-auto px-3 sm:px-4 py-6 sm:py-12"
             >
               <CourseSelector
                 level={selectedLevel}
@@ -253,11 +313,12 @@ const Index = () => {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -100 }}
               transition={{ duration: 0.3 }}
-              className="container max-w-4xl mx-auto px-4 py-4"
+              className="container max-w-4xl mx-auto px-2 sm:px-4 py-2 sm:py-4"
             >
               <ChatInterface
                 courseId={selectedCourse}
                 onBack={goBack}
+                onChangeCourse={handleChangeCourse}
               />
             </motion.div>
           )}

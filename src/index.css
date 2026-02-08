@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+/* Century Gothic fallback stack - system font with web-safe fallbacks */
 
 @tailwind base;
 @tailwind components;
@@ -107,11 +107,11 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Century Gothic', 'CenturyGothic', 'AppleGothic', 'Gill Sans', 'Gill Sans MT', sans-serif;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Space Grotesk', sans-serif;
+    font-family: 'Century Gothic', 'CenturyGothic', 'AppleGothic', 'Gill Sans', 'Gill Sans MT', sans-serif;
   }
 }
 

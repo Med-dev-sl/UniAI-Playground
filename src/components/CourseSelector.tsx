@@ -47,7 +47,7 @@ export function CourseSelector({ level, facultyId, selectedCourse, onSelectCours
         </p>
       </motion.div>
 
-      <div className="grid md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
         {courses.map((course, index) => (
           <GlowCard
             key={course.id}

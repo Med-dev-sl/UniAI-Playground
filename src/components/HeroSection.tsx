@@ -35,9 +35,9 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
   ];
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center py-20 px-4">
-      {/* 3D Floating Cards Background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+    <div className="relative min-h-screen flex items-center justify-center py-16 sm:py-20 px-4">
+      {/* 3D Floating Cards Background - hidden on mobile for perf */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none hidden sm:block">
         <motion.div
           className="absolute top-20 left-10 w-32 h-40 glass-card rounded-2xl opacity-30"
           animate={{ 
@@ -97,7 +97,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
-          className="text-5xl md:text-7xl font-display font-bold mb-6"
+          className="text-4xl sm:text-5xl md:text-7xl font-display font-bold mb-4 sm:mb-6"
         >
           <span className="gradient-text">UniAI</span>
           <br />
@@ -109,7 +109,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-12"
+          className="text-base sm:text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-8 sm:mb-12 px-2"
         >
           Your intelligent study companion with specialized AI agents for every course.
           <span className="text-foreground"> Ask questions, get instant answers, and excel in your studies.</span>
@@ -145,7 +145,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.4 }}
-          className="grid grid-cols-3 gap-8 max-w-2xl mx-auto"
+          className="grid grid-cols-3 gap-4 sm:gap-8 max-w-2xl mx-auto"
         >
           {stats.map((stat, index) => (
             <motion.div
@@ -158,7 +158,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
               <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-electric/10 mb-3">
                 <stat.icon className="w-6 h-6 text-electric" />
               </div>
-              <div className="text-3xl font-display font-bold text-foreground">
+              <div className="text-2xl sm:text-3xl font-display font-bold text-foreground">
                 {stat.value}
               </div>
               <div className="text-sm text-muted-foreground">
