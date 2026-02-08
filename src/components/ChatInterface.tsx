@@ -379,12 +379,12 @@ export function ChatInterface({ courseId, onBack, onChangeCourse, onSwitchCourse
       </AnimatePresence>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 min-h-0">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass-card p-4 mb-4"
+          className="glass-card p-4 mb-4 flex-shrink-0"
         >
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 sm:gap-4 min-w-0">
@@ -439,7 +439,7 @@ export function ChatInterface({ courseId, onBack, onChangeCourse, onSwitchCourse
         </motion.div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto space-y-4 mb-2 sm:mb-4 pr-1 sm:pr-2 custom-scrollbar" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
+        <div className="flex-1 overflow-y-auto space-y-4 mb-2 sm:mb-4 pr-1 sm:pr-2 custom-scrollbar min-h-0" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
           <AnimatePresence>
             {messages.map((message, index) => (
               <motion.div
@@ -562,7 +562,7 @@ export function ChatInterface({ courseId, onBack, onChangeCourse, onSwitchCourse
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           onSubmit={handleSubmit}
-          className="glass-card p-3 sm:p-4"
+          className="glass-card p-3 sm:p-4 flex-shrink-0"
         >
           <div className="flex gap-2 sm:gap-3">
             <div className="flex-1 relative">
