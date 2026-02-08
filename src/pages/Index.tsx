@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { FloatingOrbs } from '@/components/ui/FloatingOrbs';
@@ -12,6 +12,7 @@ import { UserMenu } from '@/components/UserMenu';
 import { ProgramLevel } from '@/data/courses';
 import { ArrowRight, LogIn } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useCourse } from '@/contexts/CourseContext';
 
 type Step = 'hero' | 'level' | 'faculty' | 'course' | 'chat';
 
@@ -22,7 +23,18 @@ const Index = () => {
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
   
   const { user, loading } = useAuth();
+  const { courseState, setCourseState, isInChat } = useCourse();
   const navigate = useNavigate();
+
+  // Restore persisted course state on mount
+  useEffect(() => {
+    if (courseState.courseId && courseState.level && courseState.facultyId && user) {
+      setSelectedLevel(courseState.level);
+      setSelectedFaculty(courseState.facultyId);
+      setSelectedCourse(courseState.courseId);
+      setStep('chat');
+    }
+  }, [user, courseState, loading]);
 
   const handleLevelSelect = (level: ProgramLevel) => {
     setSelectedLevel(level);
@@ -54,6 +66,14 @@ const Index = () => {
             navigate('/auth');
             return;
           }
+          // Persist course state before entering chat
+          setCourseState({
+            level: selectedLevel,
+            faculty: selectedFaculty,
+            facultyId: selectedFaculty,
+            course: selectedCourse,
+            courseId: selectedCourse,
+          });
           setStep('chat');
         }
         break;

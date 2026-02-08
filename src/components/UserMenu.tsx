@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { LogOut, User, Settings, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useCourse } from '@/contexts/CourseContext';
 import { useNavigate } from 'react-router-dom';
 import {
   DropdownMenu,
@@ -13,9 +14,11 @@ import {
 
 export function UserMenu() {
   const { user, signOut } = useAuth();
+  const { clearCourse } = useCourse();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
+    clearCourse();
     await signOut();
     navigate('/auth');
   };
