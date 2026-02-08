@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useChatHistory, ChatMessage } from '@/hooks/useChatHistory';
 import { useFavorites } from '@/hooks/useFavorites';
 import { ConversationHistory } from './ConversationHistory';
+import { CourseSwitchDropdown } from './CourseSwitchDropdown';
 import { useAuth } from '@/hooks/useAuth';
 
 interface Message {
@@ -20,11 +21,12 @@ interface ChatInterfaceProps {
   courseId: string;
   onBack: () => void;
   onChangeCourse?: () => void;
+  onSwitchCourse?: (courseId: string) => void;
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/course-chat`;
 
-export function ChatInterface({ courseId, onBack, onChangeCourse }: ChatInterfaceProps) {
+export function ChatInterface({ courseId, onBack, onChangeCourse, onSwitchCourse }: ChatInterfaceProps) {
   const course = getCourseById(courseId);
   const faculty = course ? getFacultyById(course.faculty) : null;
   const { toast } = useToast();
@@ -355,7 +357,7 @@ export function ChatInterface({ courseId, onBack, onChangeCourse }: ChatInterfac
   }
 
   return (
-    <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 h-[calc(100vh-6rem)] sm:h-[calc(100vh-8rem)] max-h-[800px]">
+    <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 h-[calc(100dvh-6rem)] sm:h-[calc(100dvh-8rem)]">
       {/* Conversation History Sidebar */}
       <AnimatePresence>
         {showHistory && (
@@ -407,10 +409,11 @@ export function ChatInterface({ courseId, onBack, onChangeCourse }: ChatInterfac
             </div>
 
             <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-              {onChangeCourse && (
-                <AnimatedButton variant="ghost" size="sm" onClick={onChangeCourse} className="text-xs hidden sm:flex">
-                  Change Course
-                </AnimatedButton>
+              {onSwitchCourse && (
+                <CourseSwitchDropdown
+                  currentCourseId={courseId}
+                  onSwitchCourse={onSwitchCourse}
+                />
               )}
               <AnimatedButton 
                 variant="ghost" 
@@ -436,7 +439,7 @@ export function ChatInterface({ courseId, onBack, onChangeCourse }: ChatInterfac
         </motion.div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto space-y-4 mb-2 sm:mb-4 pr-1 sm:pr-2 custom-scrollbar" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
           <AnimatePresence>
             {messages.map((message, index) => (
               <motion.div
