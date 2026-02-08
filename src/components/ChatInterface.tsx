@@ -19,11 +19,12 @@ interface Message {
 interface ChatInterfaceProps {
   courseId: string;
   onBack: () => void;
+  onChangeCourse?: () => void;
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/course-chat`;
 
-export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
+export function ChatInterface({ courseId, onBack, onChangeCourse }: ChatInterfaceProps) {
   const course = getCourseById(courseId);
   const faculty = course ? getFacultyById(course.faculty) : null;
   const { toast } = useToast();
@@ -354,7 +355,7 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
   }
 
   return (
-    <div className="flex gap-4 h-[calc(100vh-8rem)] max-h-[800px]">
+    <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 h-[calc(100vh-6rem)] sm:h-[calc(100vh-8rem)] max-h-[800px]">
       {/* Conversation History Sidebar */}
       <AnimatePresence>
         {showHistory && (
@@ -383,29 +384,34 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
           animate={{ opacity: 1, y: 0 }}
           className="glass-card p-4 mb-4"
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
               <AnimatedButton variant="ghost" size="sm" onClick={onBack}>
                 <ArrowLeft className="w-4 h-4" />
               </AnimatedButton>
               
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-electric to-electric-glow flex items-center justify-center">
-                  <Bot className="w-5 h-5 text-primary-foreground" />
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-electric to-electric-glow flex items-center justify-center flex-shrink-0">
+                  <Bot className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
                 </div>
-                <div>
-                  <h3 className="font-display font-semibold text-foreground">
+                <div className="min-w-0">
+                  <h3 className="font-display font-semibold text-foreground text-sm sm:text-base truncate">
                     {course?.shortName} AI
                   </h3>
                   <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                    Online • {faculty?.shortName}
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />
+                    <span className="truncate">Online • {faculty?.shortName}</span>
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+              {onChangeCourse && (
+                <AnimatedButton variant="ghost" size="sm" onClick={onChangeCourse} className="text-xs hidden sm:flex">
+                  Change Course
+                </AnimatedButton>
+              )}
               <AnimatedButton 
                 variant="ghost" 
                 size="sm" 
@@ -452,7 +458,7 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
                   }
                 </div>
                 
-                <div className={`max-w-[80%] sm:max-w-[70%] md:max-w-[60%] ${
+                <div className={`max-w-[85%] sm:max-w-[70%] md:max-w-[60%] ${
                   message.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'
                 }`}>
                   <div className="whitespace-pre-wrap text-sm">
@@ -553,9 +559,9 @@ export function ChatInterface({ courseId, onBack }: ChatInterfaceProps) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           onSubmit={handleSubmit}
-          className="glass-card p-4"
+          className="glass-card p-3 sm:p-4"
         >
-          <div className="flex gap-3">
+          <div className="flex gap-2 sm:gap-3">
             <div className="flex-1 relative">
               <textarea
                 ref={inputRef}
