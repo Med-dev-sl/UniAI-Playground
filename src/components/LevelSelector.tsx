@@ -1,11 +1,14 @@
 import { motion } from 'framer-motion';
-import { GraduationCap, Award, FileCheck } from 'lucide-react';
+import { GraduationCap, Award, FileCheck, LogOut } from 'lucide-react';
 import { GlowCard } from './ui/GlowCard';
+import { AnimatedButton } from './ui/AnimatedButton';
 import { ProgramLevel } from '@/data/courses';
+import { useAuth } from '@/hooks/useAuth';
 
 interface LevelSelectorProps {
-  selectedLevel: ProgramLevel | null;
+  selectedLevel?: ProgramLevel | null;
   onSelectLevel: (level: ProgramLevel) => void;
+  onLogout?: () => void;
 }
 
 const levels = [
@@ -35,9 +38,36 @@ const levels = [
   }
 ];
 
-export function LevelSelector({ selectedLevel, onSelectLevel }: LevelSelectorProps) {
+export function LevelSelector({ selectedLevel, onSelectLevel, onLogout }: LevelSelectorProps) {
+  const { user, signOut } = useAuth();
+
+  const handleLogout = async () => {
+    await signOut();
+    if (onLogout) onLogout();
+  };
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 max-w-6xl mx-auto">
+      {/* Header with logout */}
+      <div className="flex items-center justify-between">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex-1"
+        >
+          <p className="text-sm text-muted-foreground mb-2">Logged in as</p>
+          <p className="font-medium text-foreground">{user?.email}</p>
+        </motion.div>
+        <AnimatedButton 
+          variant="outline" 
+          onClick={handleLogout}
+          className="flex items-center gap-2"
+        >
+          <LogOut className="w-4 h-4" />
+          Logout
+        </AnimatedButton>
+      </div>
+
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}

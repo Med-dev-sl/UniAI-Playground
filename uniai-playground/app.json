@@ -38,15 +38,6 @@
             "backgroundColor": "#000000"
           }
         }
-      ],
-      [
-        "expo-font",
-        {
-          "fonts": [
-            "./assets/Century Gothic/centurygothic.ttf",
-            "./assets/Century Gothic/centurygothic_bold.ttf"
-          ]
-        }
       ]
     ],
     "experiments": {
