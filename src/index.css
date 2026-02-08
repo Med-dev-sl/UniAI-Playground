@@ -183,21 +183,35 @@
 
 /* Custom scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: hsl(var(--muted));
+  background: transparent;
   border-radius: 3px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: hsl(var(--electric-blue) / 0.5);
+  background: hsl(var(--electric-blue) / 0.4);
   border-radius: 3px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--electric-blue) / 0.7);
+  background: hsl(var(--electric-blue) / 0.6);
+}
+
+/* Mobile scroll fix */
+@supports (-webkit-touch-callout: none) {
+  .custom-scrollbar {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Ensure Century Gothic on mobile */
+@media (max-width: 640px) {
+  body, h1, h2, h3, h4, h5, h6, button, input, textarea, select, p, span, div, a, label {
+    font-family: 'Century Gothic', 'CenturyGothic', 'AppleGothic', 'Gill Sans', 'Gill Sans MT', -apple-system, sans-serif !important;
+  }
 }
 
   @keyframes float {

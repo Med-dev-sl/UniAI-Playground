@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { FloatingOrbs } from '@/components/ui/FloatingOrbs';
 import { HeroSection } from '@/components/HeroSection';
+import { getCourseById } from '@/data/courses';
 import { LevelSelector } from '@/components/LevelSelector';
 import { FacultySelector } from '@/components/FacultySelector';
 import { CourseSelector } from '@/components/CourseSelector';
@@ -141,6 +142,16 @@ const Index = () => {
     setSelectedLevel(null);
     setSelectedFaculty(null);
     setSelectedCourse(null);
+  }, []);
+
+  const handleSwitchCourse = useCallback((newCourseId: string) => {
+    const course = getCourseById(newCourseId);
+    if (course) {
+      setSelectedLevel(course.level);
+      setSelectedFaculty(course.faculty);
+      setSelectedCourse(newCourseId);
+      saveSelection(course.level, course.faculty, newCourseId);
+    }
   }, []);
 
   return (
@@ -319,6 +330,7 @@ const Index = () => {
                 courseId={selectedCourse}
                 onBack={goBack}
                 onChangeCourse={handleChangeCourse}
+                onSwitchCourse={handleSwitchCourse}
               />
             </motion.div>
           )}
