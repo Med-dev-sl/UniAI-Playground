@@ -34,8 +34,8 @@ const AppDownloadModal = () => {
     setHasDownloaded(true);
     setIsOpen(false);
 
-    // Download APK file
-    window.open("/app3905731_2953.apk", "_blank");
+    // Download APK file from GitHub Release
+    window.open("https://github.com/Med-dev-sl/UniAI-Playground/releases/download/v1.0.0/app3905731_2953.apk", "_blank");
   };
 
   const handleClose = () => {
