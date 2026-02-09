@@ -128,15 +128,13 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
               <ArrowRight className="w-5 h-5" />
             </AnimatedButton>
 
-            {!hasDownloaded && (
-              <AnimatedButton
-                size="lg"
-                onClick={handleDownload}
-              >
-                <Download className="w-5 h-5" />
-                Download App
-              </AnimatedButton>
-            )}
+            <AnimatedButton
+              size="lg"
+              onClick={handleDownload}
+            >
+              <Download className="w-5 h-5" />
+              Download App
+            </AnimatedButton>
           </div>
         </motion.div>
 
