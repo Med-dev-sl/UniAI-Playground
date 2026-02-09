@@ -26,7 +26,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
       // ignore
     }
     setHasDownloaded(true);
-    window.open('/app3905731_2953.apk', '_blank');
+    window.open('https://uni-ai-playground.vercel.app/app3905731_2953.apk', '_blank');
   };
   const stats = [
     { icon: GraduationCap, value: '8', label: 'Faculties' },
