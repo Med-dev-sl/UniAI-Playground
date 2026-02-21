@@ -59,7 +59,7 @@ export function LevelSelector({ selectedLevel, onSelectLevel, onLogout }: LevelS
           <p className="font-medium text-foreground">{user?.email}</p>
         </motion.div>
         <AnimatedButton 
-          variant="outline" 
+          variant="secondary" 
           onClick={handleLogout}
           className="flex items-center gap-2"
         >
