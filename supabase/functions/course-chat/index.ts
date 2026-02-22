@@ -16,7 +16,7 @@ interface RequestBody {
   courseName: string;
   courseLevel: string;
   facultyName: string;
-  courseDescription: string;
+  courseDescription?: string;
 }
 
 serve(async (req) => {
@@ -34,12 +34,12 @@ serve(async (req) => {
     const { messages, courseName, courseLevel, facultyName, courseDescription }: RequestBody = await req.json();
 
     // Create a specialized system prompt for the course
+    const descriptionLine = courseDescription ? `\n- Course Description: ${courseDescription}` : '';
     const systemPrompt = `You are UniAI, a specialized AI tutor for the "${courseName}" programme at universities in Sierra Leone.
 
 IMPORTANT CONTEXT:
 - Programme Level: ${courseLevel}
-- Faculty: ${facultyName}
-- Course Description: ${courseDescription}
+- Faculty: ${facultyName}${descriptionLine}
 
 YOUR ROLE:
 You are an expert AI assistant specifically trained to help students studying "${courseName}". You have deep knowledge of:
