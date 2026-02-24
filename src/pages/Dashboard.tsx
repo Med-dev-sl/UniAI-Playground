@@ -50,8 +50,13 @@ const Dashboard = () => {
 
   if (authLoading || !user) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
+        <div className="relative w-16 h-16">
+          <div className="absolute inset-0 rounded-full border-4 border-electric/20" />
+          <div className="absolute inset-0 rounded-full border-4 border-t-electric animate-spin" />
+          <div className="absolute inset-2 rounded-full border-4 border-b-electric-glow animate-pulse" />
+        </div>
+        <p className="text-muted-foreground font-medium animate-pulse">Initializing Dashboard...</p>
       </div>
     );
   }

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "728158913203",
+    "project_id": "uniai-playground",
+    "storage_bucket": "uniai-playground.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:728158913203:android:a2b76b2e3e5dc31c9e26c6",
+        "android_client_info": {
+          "package_name": "com.connectsl.uniai"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAfTKcpJ7lkx7necWevxwKiB8VCuPzQXiY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

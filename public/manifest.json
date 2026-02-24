@@ -1,0 +1,17 @@
+{
+    "name": "UNI AI Playground",
+    "short_name": "UNI AI",
+    "description": "AI-Powered Learning for Sierra Leone Universities with specialized course agents.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#020617",
+    "theme_color": "#0ea5e9",
+    "icons": [
+        {
+            "src": "logo.jpg",
+            "sizes": "512x512",
+            "type": "image/jpeg",
+            "purpose": "any maskable"
+        }
+    ]
+}
