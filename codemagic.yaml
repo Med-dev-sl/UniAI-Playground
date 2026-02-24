@@ -1,13 +1,13 @@
 workflows:
   android-debug-workflow:
     name: UNI AI Android Debug APK
-    instance_type: mac_mini_m1
     max_build_duration: 30
+    instance_type: linux
     environment:
       node: latest
       java: 17
       groups:
-        - supabase_keys # We will create this group in Codemagic UI
+        - supabase_keys
     scripts:
       - name: Install dependencies
         script: |
@@ -25,7 +25,3 @@ workflows:
           ./gradlew assembleDebug
     artifacts:
       - android/app/build/outputs/apk/debug/*.apk
-    publishing:
-      email:
-        recipients:
-          - ${{ secrets.NOTIFICATION_EMAIL }} # Optional
