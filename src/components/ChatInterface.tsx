@@ -31,7 +31,7 @@ export function ChatInterface({ courseId, onBack, onChangeCourse, onSwitchCourse
   const faculty = course ? getFacultyById(course.faculty) : null;
   const { toast } = useToast();
   const { user } = useAuth();
-  
+
   const {
     conversation,
     messages: savedMessages,
@@ -44,16 +44,8 @@ export function ChatInterface({ courseId, onBack, onChangeCourse, onSwitchCourse
   } = useChatHistory(courseId);
 
   const { isFavorite, addFavorite, removeFavorite } = useFavorites();
-  
-  const [showHistory, setShowHistory] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const isCourseFavorite = isFavorite(courseId);
-  
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
 
+  const [showHistory, setShowHistory] = useState(false);
   const getWelcomeMessage = (): Message => ({
     id: 'welcome',
     role: 'assistant',
@@ -61,19 +53,45 @@ export function ChatInterface({ courseId, onBack, onChangeCourse, onSwitchCourse
     timestamp: new Date()
   });
 
-  // Load saved messages when conversation changes
+  const [messages, setMessages] = useState<Message[]>(() => [getWelcomeMessage()]);
+  const [input, setInput] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const isCourseFavorite = isFavorite(courseId);
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+
+
+  // Load saved messages when conversation changes - stabilized to avoid "auto-refreshing"
+  const initialLoadDone = useRef(false);
+  const prevConvoId = useRef<string | null>(null);
+
   useEffect(() => {
-    if (savedMessages.length > 0) {
-      setMessages(savedMessages.map((m: ChatMessage) => ({
-        id: m.id,
-        role: m.role,
-        content: m.content,
-        timestamp: new Date(m.created_at)
-      })));
-    } else if (!historyLoading) {
-      setMessages([getWelcomeMessage()]);
+    // If conversation switched, allow re-loading
+    if (conversation?.id !== prevConvoId.current) {
+      initialLoadDone.current = false;
+      prevConvoId.current = conversation?.id || null;
     }
-  }, [savedMessages, historyLoading, course?.shortName, course?.level]);
+
+    if (!historyLoading && !initialLoadDone.current) {
+      if (savedMessages.length > 0) {
+        setMessages(savedMessages.map((m: ChatMessage) => ({
+          id: m.id,
+          role: m.role,
+          content: m.content,
+          timestamp: new Date(m.created_at)
+        })));
+        initialLoadDone.current = true;
+      } else if (!historyLoading) {
+        setMessages([getWelcomeMessage()]);
+        // Also mark as done if we have no messages but loading is finished
+        if (conversation?.id || !historyLoading) {
+          initialLoadDone.current = true;
+        }
+      }
+    }
+  }, [savedMessages, historyLoading, conversation?.id]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -102,7 +120,7 @@ export function ChatInterface({ courseId, onBack, onChangeCourse, onSwitchCourse
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      
+
       if (response.status === 429) {
         toast({
           title: "Rate Limited",
@@ -111,7 +129,7 @@ export function ChatInterface({ courseId, onBack, onChangeCourse, onSwitchCourse
         });
         throw new Error("Rate limited");
       }
-      
+
       if (response.status === 402) {
         toast({
           title: "Usage Limit Reached",
@@ -120,7 +138,7 @@ export function ChatInterface({ courseId, onBack, onChangeCourse, onSwitchCourse
         });
         throw new Error("Payment required");
       }
-      
+
       throw new Error(errorData.error || "Failed to get response");
     }
 
@@ -163,9 +181,9 @@ export function ChatInterface({ courseId, onBack, onChangeCourse, onSwitchCourse
           const content = parsed.choices?.[0]?.delta?.content as string | undefined;
           if (content) {
             assistantContent += content;
-            setMessages(prev => 
-              prev.map(m => 
-                m.id === assistantId 
+            setMessages(prev =>
+              prev.map(m =>
+                m.id === assistantId
                   ? { ...m, content: assistantContent }
                   : m
               )
@@ -192,9 +210,9 @@ export function ChatInterface({ courseId, onBack, onChangeCourse, onSwitchCourse
           const content = parsed.choices?.[0]?.delta?.content as string | undefined;
           if (content) {
             assistantContent += content;
-            setMessages(prev => 
-              prev.map(m => 
-                m.id === assistantId 
+            setMessages(prev =>
+              prev.map(m =>
+                m.id === assistantId
                   ? { ...m, content: assistantContent }
                   : m
               )
@@ -215,7 +233,7 @@ export function ChatInterface({ courseId, onBack, onChangeCourse, onSwitchCourse
     if (!input.trim() || isTyping || !user) return;
 
     let currentConversation = conversation;
-    
+
     // Create conversation if none exists
     if (!currentConversation) {
       const firstMessagePreview = input.trim().slice(0, 50);
@@ -315,7 +333,7 @@ export function ChatInterface({ courseId, onBack, onChangeCourse, onSwitchCourse
       toast({ title: 'Popup blocked', description: 'Unable to open print window.', variant: 'destructive' });
       return;
     }
-    const html = `<!doctype html><html><head><meta charset="utf-8"><title>${filename}</title><style>body{font-family:Inter, Arial, sans-serif;padding:24px;color:#111} pre{white-space:pre-wrap;font-family:inherit}</style></head><body><pre>${cleaned.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre></body></html>`;
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>${filename}</title><style>body{font-family:Inter, Arial, sans-serif;padding:24px;color:#111} pre{white-space:pre-wrap;font-family:inherit}</style></head><body><pre>${cleaned.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre></body></html>`;
     w.document.write(html);
     w.document.close();
     w.focus();
@@ -348,16 +366,10 @@ export function ChatInterface({ courseId, onBack, onChangeCourse, onSwitchCourse
     utteranceRef.current = null;
   };
 
-  if (historyLoading) {
-    return (
-      <div className="flex items-center justify-center h-[calc(100vh-8rem)]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-electric" />
-      </div>
-    );
-  }
+
 
   return (
-    <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 h-[calc(100dvh-6rem)] sm:h-[calc(100dvh-8rem)]">
+    <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 h-full min-h-0">
       {/* Conversation History Sidebar */}
       <AnimatePresence>
         {showHistory && (
@@ -379,67 +391,32 @@ export function ChatInterface({ courseId, onBack, onChangeCourse, onSwitchCourse
       </AnimatePresence>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col min-w-0 min-h-0">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="glass-card p-4 mb-4 flex-shrink-0"
-        >
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-              <AnimatedButton variant="ghost" size="sm" onClick={onBack}>
-                <ArrowLeft className="w-4 h-4" />
-              </AnimatedButton>
-              
-              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-electric to-electric-glow flex items-center justify-center flex-shrink-0">
-                  <Bot className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
-                </div>
-                <div className="min-w-0">
-                  <h3 className="font-display font-semibold text-foreground text-sm sm:text-base truncate">
-                    {course?.shortName} AI
-                  </h3>
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />
-                    <span className="truncate">Online • {faculty?.shortName}</span>
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-              {onSwitchCourse && (
-                <CourseSwitchDropdown
-                  currentCourseId={courseId}
-                  onSwitchCourse={onSwitchCourse}
-                />
-              )}
-              <AnimatedButton 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => isCourseFavorite ? removeFavorite(courseId) : addFavorite(courseId)}
-                className={isCourseFavorite ? 'text-yellow-500' : ''}
-              >
-                <Star className={`w-4 h-4 ${isCourseFavorite ? 'fill-current' : ''}`} />
-              </AnimatedButton>
-              <AnimatedButton 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setShowHistory(!showHistory)}
-                className={showHistory ? 'bg-electric/20' : ''}
-              >
-                <History className="w-4 h-4" />
-              </AnimatedButton>
-              <AnimatedButton variant="ghost" size="sm" onClick={handleNewChat}>
-                <RefreshCw className="w-4 h-4" />
-              </AnimatedButton>
-            </div>
-          </div>
-        </motion.div>
+      <div className="flex-1 flex flex-col min-w-0 min-h-0 relative">
+        {/* Floating Controls */}
+        <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
+          <AnimatedButton
+            variant="ghost"
+            size="sm"
+            onClick={() => isCourseFavorite ? removeFavorite(courseId) : addFavorite(courseId)}
+            className={`glass-card ${isCourseFavorite ? 'text-yellow-500' : ''}`}
+          >
+            <Star className={`w-4 h-4 ${isCourseFavorite ? 'fill-current' : ''}`} />
+          </AnimatedButton>
+          <AnimatedButton
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowHistory(!showHistory)}
+            className={`glass-card ${showHistory ? 'bg-electric/20' : ''}`}
+          >
+            <History className="w-4 h-4" />
+          </AnimatedButton>
+          <AnimatedButton variant="ghost" size="sm" onClick={handleNewChat} className="glass-card">
+            <RefreshCw className="w-4 h-4" />
+          </AnimatedButton>
+        </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto space-y-4 mb-2 sm:mb-4 pr-1 sm:pr-2 custom-scrollbar min-h-0" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
+        <div className="flex-1 overflow-y-auto space-y-4 mb-2 sm:mb-4 pr-1 sm:pr-2 custom-scrollbar min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
           <AnimatePresence>
             {messages.map((message, index) => (
               <motion.div
@@ -450,73 +427,70 @@ export function ChatInterface({ courseId, onBack, onChangeCourse, onSwitchCourse
                 transition={{ delay: index * 0.05 }}
                 className={`flex gap-3 ${message.role === 'user' ? 'flex-row-reverse' : ''}`}
               >
-                <div className={`w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center ${
-                  message.role === 'user' 
-                    ? 'bg-electric' 
-                    : 'bg-gradient-to-br from-electric/20 to-electric-glow/20 border border-electric/30'
-                }`}>
-                  {message.role === 'user' 
+                <div className={`w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center ${message.role === 'user'
+                  ? 'bg-electric'
+                  : 'bg-gradient-to-br from-electric/20 to-electric-glow/20 border border-electric/30'
+                  }`}>
+                  {message.role === 'user'
                     ? <User className="w-4 h-4 text-primary-foreground" />
                     : <Sparkles className="w-4 h-4 text-electric" />
                   }
                 </div>
-                
-                <div className={`max-w-[85%] sm:max-w-[70%] md:max-w-[60%] ${
-                  message.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'
-                }`}>
-                  <div className="whitespace-pre-wrap text-sm">
-                    {renderContent(message.content)}
-                  </div>
 
-                  {/* Assistant controls: copy, download, pdf, tts */}
-                  {message.role === 'assistant' && (
-                    <div className="flex items-center gap-2 mt-3 flex-wrap">
-                      <button
-                        onClick={() => copyToClipboard(message.content)}
-                        className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
-                        aria-label="Copy response"
-                      >
-                        <Copy className="w-4 h-4" /> Copy
-                      </button>
-
-                      <button
-                        onClick={() => downloadAsWord(message.content, `uniai-response-${message.id}`)}
-                        className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
-                        aria-label="Download as Word"
-                      >
-                        <FileText className="w-4 h-4" /> Word
-                      </button>
-
-                      <button
-                        onClick={() => downloadAsPdf(message.content, `uniai-response-${message.id}`)}
-                        className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
-                        aria-label="Download as PDF"
-                      >
-                        <DownloadCloud className="w-4 h-4" /> PDF
-                      </button>
-
-                      <button
-                        onClick={() => speak(message.content)}
-                        className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
-                        aria-label="Play response"
-                      >
-                        <Volume2 className="w-4 h-4" /> Listen
-                      </button>
-
-                      <button
-                        onClick={stopSpeaking}
-                        className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
-                        aria-label="Stop speech"
-                      >
-                        Stop
-                      </button>
+                <div className={`flex-1 flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[95%] sm:max-w-[90%] lg:max-w-[85%] ${message.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'
+                    }`}>
+                    <div className="whitespace-pre-wrap text-sm sm:text-base">
+                      {renderContent(message.content)}
                     </div>
-                  )}
 
-                  <div className={`text-xs mt-2 ${
-                    message.role === 'user' ? 'text-primary-foreground/70' : 'text-muted-foreground'
-                  }`}>
-                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {/* Assistant controls: copy, download, pdf, tts */}
+                    {message.role === 'assistant' && (
+                      <div className="flex items-center gap-2 mt-3 flex-wrap">
+                        <button
+                          onClick={() => copyToClipboard(message.content)}
+                          className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                          aria-label="Copy response"
+                        >
+                          <Copy className="w-4 h-4" /> Copy
+                        </button>
+
+                        <button
+                          onClick={() => downloadAsWord(message.content, `uniai-response-${message.id}`)}
+                          className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                          aria-label="Download as Word"
+                        >
+                          <FileText className="w-4 h-4" /> Word
+                        </button>
+
+                        <button
+                          onClick={() => downloadAsPdf(message.content, `uniai-response-${message.id}`)}
+                          className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                          aria-label="Download as PDF"
+                        >
+                          <DownloadCloud className="w-4 h-4" /> PDF
+                        </button>
+
+                        <button
+                          onClick={() => speak(message.content)}
+                          className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                          aria-label="Play response"
+                        >
+                          <Volume2 className="w-4 h-4" /> Listen
+                        </button>
+
+                        <button
+                          onClick={stopSpeaking}
+                          className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                          aria-label="Stop speech"
+                        >
+                          Stop
+                        </button>
+                      </div>
+                    )}
+                    <div className={`text-xs mt-2 ${message.role === 'user' ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+                      {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </div>
                   </div>
                 </div>
               </motion.div>
@@ -553,7 +527,7 @@ export function ChatInterface({ courseId, onBack, onChangeCourse, onSwitchCourse
               </div>
             </motion.div>
           )}
-          
+
           <div ref={messagesEndRef} />
         </div>
 
@@ -562,7 +536,7 @@ export function ChatInterface({ courseId, onBack, onChangeCourse, onSwitchCourse
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           onSubmit={handleSubmit}
-          className="glass-card p-3 sm:p-4 flex-shrink-0"
+          className="glass-card p-3 sm:p-4 mx-auto w-full max-w-5xl flex-shrink-0"
         >
           <div className="flex gap-2 sm:gap-3">
             <div className="flex-1 relative">

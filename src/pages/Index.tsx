@@ -9,8 +9,8 @@ import { CourseSelector } from '@/components/CourseSelector';
 import { ChatInterface } from '@/components/ChatInterface';
 import { AnimatedButton } from '@/components/ui/AnimatedButton';
 import { UserMenu } from '@/components/UserMenu';
-import { ProgramLevel } from '@/data/courses';
-import { ArrowRight, LogIn } from 'lucide-react';
+import { ProgramLevel, faculties } from '@/data/courses';
+import { ArrowRight, ArrowLeft, LogIn } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCourse } from '@/contexts/CourseContext';
 
@@ -21,7 +21,7 @@ const Index = () => {
   const [selectedLevel, setSelectedLevel] = useState<ProgramLevel | null>(null);
   const [selectedFaculty, setSelectedFaculty] = useState<string | null>(null);
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
-  
+
   const { user, loading } = useAuth();
   const { courseState, setCourseState, isInChat } = useCourse();
   const navigate = useNavigate();
@@ -106,7 +106,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       <FloatingOrbs />
-      
+
       {/* Header */}
       <motion.header
         initial={{ opacity: 0, y: -20 }}
@@ -114,35 +114,56 @@ const Index = () => {
         className="fixed top-0 left-0 right-0 z-50 px-6 py-4"
       >
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <button onClick={resetToStart} className="focus:outline-none">
-            <img src="/logo.png" alt="Platform Logo" className="w-40 h-40" />
-          </button>
-          
+          <div className="flex items-center gap-2">
+            {step === 'chat' && (
+              <AnimatedButton
+                variant="ghost"
+                size="sm"
+                onClick={goBack}
+                className="mr-2"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </AnimatedButton>
+            )}
+            <button onClick={resetToStart} className="flex items-center gap-2 focus:outline-none">
+              <img src="/logo.png" alt="Platform Logo" className="w-12 h-12" />
+              {step === 'chat' && selectedCourse && (
+                <div className="flex flex-col items-start border-l border-border pl-4 ml-2">
+                  <span className="text-sm font-bold text-foreground">
+                    {faculties.flatMap(f => f.courses).find(c => c.id === selectedCourse)?.shortName}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
+                    AI Assistant Active
+                  </span>
+                </div>
+              )}
+            </button>
+          </div>
+
           <div className="flex items-center gap-4">
             {step !== 'hero' && step !== 'chat' && (
               <div className="flex items-center gap-2">
                 {['level', 'faculty', 'course'].map((s, i) => (
                   <div
                     key={s}
-                    className={`w-2 h-2 rounded-full transition-all ${
-                      step === s 
-                        ? 'w-8 bg-electric' 
-                        : ['level', 'faculty', 'course'].indexOf(step) > i
-                          ? 'bg-electric/50'
-                          : 'bg-muted'
-                    }`}
+                    className={`w-2 h-2 rounded-full transition-all ${step === s
+                      ? 'w-8 bg-electric'
+                      : ['level', 'faculty', 'course'].indexOf(step) > i
+                        ? 'bg-electric/50'
+                        : 'bg-muted'
+                      }`}
                   />
                 ))}
               </div>
             )}
-            
+
             {!loading && (
               user ? (
                 <UserMenu />
               ) : (
-                <AnimatedButton 
-                  variant="secondary" 
-                  size="sm" 
+                <AnimatedButton
+                  variant="secondary"
+                  size="sm"
                   onClick={() => navigate('/auth')}
                 >
                   <LogIn className="w-4 h-4" />
@@ -182,7 +203,7 @@ const Index = () => {
                 selectedLevel={selectedLevel}
                 onSelectLevel={handleLevelSelect}
               />
-              
+
               {selectedLevel && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
@@ -213,7 +234,7 @@ const Index = () => {
                 onSelectFaculty={handleFacultySelect}
                 onBack={goBack}
               />
-              
+
               {selectedFaculty && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
@@ -245,7 +266,7 @@ const Index = () => {
                 onSelectCourse={handleCourseSelect}
                 onBack={goBack}
               />
-              
+
               {selectedCourse && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
@@ -265,23 +286,27 @@ const Index = () => {
               )}
             </motion.div>
           )}
-
-          {step === 'chat' && selectedCourse && user && (
-            <motion.div
-              key="chat"
-              initial={{ opacity: 0, x: 100 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -100 }}
-              transition={{ duration: 0.3 }}
-              className="container max-w-4xl mx-auto px-4 py-4"
-            >
-              <ChatInterface
-                courseId={selectedCourse}
-                onBack={goBack}
-              />
-            </motion.div>
-          )}
         </AnimatePresence>
+
+        {/* Chat Interface - Stays mounted to prevent reloading */}
+        {selectedCourse && user && (
+          <motion.div
+            key="chat-persistent"
+            initial={false}
+            animate={{
+              opacity: step === 'chat' ? 1 : 0,
+              display: step === 'chat' ? 'block' : 'none',
+              x: step === 'chat' ? 0 : 50
+            }}
+            transition={{ duration: 0.3 }}
+            className="w-full h-[calc(100vh-120px)] px-4 sm:px-6 lg:px-8 py-4"
+          >
+            <ChatInterface
+              courseId={selectedCourse}
+              onBack={goBack}
+            />
+          </motion.div>
+        )}
       </main>
     </div>
   );
