@@ -9,9 +9,10 @@ import { CourseSelector } from '@/components/CourseSelector';
 import { ChatInterface } from '@/components/ChatInterface';
 import { AnimatedButton } from '@/components/ui/AnimatedButton';
 import { UserMenu } from '@/components/UserMenu';
-import { ProgramLevel, faculties } from '@/data/courses';
+import { ProgramLevel, faculties, getCourseById, getFacultyById } from '@/data/courses';
 import { ArrowRight, ArrowLeft, LogIn } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/hooks/useProfile';
 import { useCourse } from '@/contexts/CourseContext';
 
 type Step = 'hero' | 'level' | 'faculty' | 'course' | 'chat';
@@ -22,19 +23,37 @@ const Index = () => {
   const [selectedFaculty, setSelectedFaculty] = useState<string | null>(null);
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
 
-  const { user, loading } = useAuth();
-  const { courseState, setCourseState, isInChat } = useCourse();
+  const { user, loading: authLoading } = useAuth();
+  const { profile, loading: profileLoading, isRegistrationComplete } = useProfile();
+  const { courseState, setCourseState } = useCourse();
   const navigate = useNavigate();
 
-  // Restore persisted course state on mount
+  const loading = authLoading || profileLoading;
+
+  // Auto-redirect to chat if profile is complete
   useEffect(() => {
-    if (courseState.courseId && courseState.level && courseState.facultyId && user) {
-      setSelectedLevel(courseState.level);
-      setSelectedFaculty(courseState.facultyId);
-      setSelectedCourse(courseState.courseId);
+    if (!authLoading && !profileLoading && user && isRegistrationComplete && profile?.course_id) {
+      setSelectedLevel(profile.academic_level as ProgramLevel);
+      setSelectedFaculty(profile.faculty_id);
+      setSelectedCourse(profile.course_id);
+
+      setCourseState({
+        level: (profile.academic_level as any) || null,
+        faculty: profile.faculty_id,
+        facultyId: profile.faculty_id,
+        course: profile.course_id,
+        courseId: profile.course_id,
+      });
       setStep('chat');
     }
-  }, [user, courseState, loading]);
+  }, [authLoading, profileLoading, user, isRegistrationComplete, profile, setCourseState]);
+
+  // If user logged in but registration incomplete, redirect to auth
+  useEffect(() => {
+    if (!authLoading && !profileLoading && user && !isRegistrationComplete) {
+      navigate('/auth');
+    }
+  }, [authLoading, profileLoading, user, isRegistrationComplete, navigate]);
 
   const handleLevelSelect = (level: ProgramLevel) => {
     setSelectedLevel(level);
@@ -61,12 +80,10 @@ const Index = () => {
         break;
       case 'course':
         if (selectedCourse) {
-          // Require login before chat
           if (!user) {
             navigate('/auth');
             return;
           }
-          // Persist course state before entering chat
           setCourseState({
             level: selectedLevel,
             faculty: selectedFaculty,
@@ -102,6 +119,14 @@ const Index = () => {
     setSelectedFaculty(null);
     setSelectedCourse(null);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-electric" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
@@ -313,3 +338,4 @@ const Index = () => {
 };
 
 export default Index;
+
