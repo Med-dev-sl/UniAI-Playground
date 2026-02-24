@@ -148,7 +148,7 @@ const Index = () => {
               </AnimatedButton>
             )}
             <button onClick={resetToStart} className="flex items-center gap-2 focus:outline-none">
-              <img src="/logo.png" alt="UNI AI - ETU AI Logo" className="w-12 h-12" />
+              <img src="/logo.png" alt="UNI AI Logo" className="w-12 h-12" />
               {step === 'chat' && selectedCourse && (
                 <div className="flex flex-col items-start border-l border-border pl-4 ml-2">
                   <span className="text-sm font-bold text-foreground">

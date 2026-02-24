@@ -1,4 +1,4 @@
-# UNI AI - ETU AI robots.txt
+# UNI AI robots.txt
 # Allow all search engines to crawl the site
 
 User-agent: Googlebot

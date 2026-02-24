@@ -101,7 +101,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
         >
           <span className="gradient-text">UNI AI</span>
           <br />
-          <span className="text-foreground">ETU Playground</span>
+          <span className="text-foreground">University Playground</span>
         </motion.h1>
 
         {/* Subtitle */}
@@ -111,8 +111,8 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="text-base sm:text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-8 sm:mb-12 px-2"
         >
-          The official <span className="text-electric font-semibold">ETU AI</span> study companion with specialized University AI agents for every course.
-          <span className="text-foreground"> Ask UNI AI anything about your degree and excel in your studies.</span>
+          The official <span className="text-electric font-semibold">University AI</span> study companion with specialized agents for every course in Sierra Leone.
+          <span className="text-foreground"> Ask UNI AI anything about your studies and excel in your degree.</span>
         </motion.p>
 
         {/* CTA Buttons */}
