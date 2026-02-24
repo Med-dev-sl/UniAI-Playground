@@ -1,4 +1,4 @@
-# UniAI Playground robots.txt
+# UNI AI - ETU AI robots.txt
 # Allow all search engines to crawl the site
 
 User-agent: Googlebot
@@ -21,7 +21,7 @@ Disallow: /admin/
 Disallow: /private/
 
 # Sitemap location
-Sitemap: https://uniai.com/sitemap.xml
+Sitemap: https://uniai-playground.web.app/sitemap.xml
 
 # Host
-Host: https://uniai.com
+Host: https://uniai-playground.web.app

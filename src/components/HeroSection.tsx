@@ -40,8 +40,8 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
       <div className="absolute inset-0 overflow-hidden pointer-events-none hidden sm:block">
         <motion.div
           className="absolute top-20 left-10 w-32 h-40 glass-card rounded-2xl opacity-30"
-          animate={{ 
-            y: [0, -20, 0], 
+          animate={{
+            y: [0, -20, 0],
             rotateY: [0, 10, 0],
             rotateX: [0, 5, 0]
           }}
@@ -50,8 +50,8 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
         />
         <motion.div
           className="absolute top-40 right-20 w-24 h-32 glass-card rounded-2xl opacity-20"
-          animate={{ 
-            y: [0, 15, 0], 
+          animate={{
+            y: [0, 15, 0],
             rotateY: [0, -15, 0],
             rotateX: [0, -5, 0]
           }}
@@ -60,8 +60,8 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
         />
         <motion.div
           className="absolute bottom-32 left-1/4 w-28 h-36 glass-card rounded-2xl opacity-25"
-          animate={{ 
-            y: [0, -15, 0], 
+          animate={{
+            y: [0, -15, 0],
             rotateY: [0, 8, 0]
           }}
           transition={{ duration: 7, repeat: Infinity, delay: 2 }}
@@ -69,8 +69,8 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
         />
         <motion.div
           className="absolute bottom-40 right-1/4 w-36 h-28 glass-card rounded-2xl opacity-20"
-          animate={{ 
-            y: [0, 20, 0], 
+          animate={{
+            y: [0, 20, 0],
             rotateY: [0, -10, 0]
           }}
           transition={{ duration: 9, repeat: Infinity, delay: 0.5 }}
@@ -99,9 +99,9 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
           transition={{ duration: 0.6, delay: 0.1 }}
           className="text-4xl sm:text-5xl md:text-7xl font-display font-bold mb-4 sm:mb-6"
         >
-          <span className="gradient-text">UniAI</span>
+          <span className="gradient-text">UNI AI</span>
           <br />
-          <span className="text-foreground">Playground</span>
+          <span className="text-foreground">ETU Playground</span>
         </motion.h1>
 
         {/* Subtitle */}
@@ -111,8 +111,8 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="text-base sm:text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-8 sm:mb-12 px-2"
         >
-          Your intelligent study companion with specialized AI agents for every course.
-          <span className="text-foreground"> Ask questions, get instant answers, and excel in your studies.</span>
+          The official <span className="text-electric font-semibold">ETU AI</span> study companion with specialized University AI agents for every course.
+          <span className="text-foreground"> Ask UNI AI anything about your degree and excel in your studies.</span>
         </motion.p>
 
         {/* CTA Buttons */}

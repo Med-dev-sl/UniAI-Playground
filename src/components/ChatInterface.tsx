@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, ArrowLeft, Bot, User, Sparkles, RefreshCw, History, Star, Copy, FileText, Volume2, DownloadCloud } from 'lucide-react';
+import { Send, ArrowLeft, Bot, User, Sparkles, RefreshCw, History, Star, Copy, FileText, Volume2, DownloadCloud, Image as ImageIcon, X, Paperclip, File as FileIcon } from 'lucide-react';
 import { AnimatedButton } from './ui/AnimatedButton';
 import { getCourseById, getFacultyById } from '@/data/courses';
 import { useToast } from '@/hooks/use-toast';
@@ -14,7 +14,18 @@ interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  file_url?: string | null;
+  file_name?: string | null;
+  file_type?: string | null;
+  file_content?: string | null;
   timestamp: Date;
+}
+
+// Local interface extension to match what's stored in Supabase
+interface ChatMessageWithFiles extends ChatMessage {
+  file_url?: string | null;
+  file_name?: string | null;
+  file_type?: string | null;
 }
 
 interface ChatInterfaceProps {
@@ -55,6 +66,7 @@ export function ChatInterface({ courseId, onBack, onChangeCourse, onSwitchCourse
 
   const [messages, setMessages] = useState<Message[]>(() => [getWelcomeMessage()]);
   const [input, setInput] = useState('');
+  const [selectedFile, setSelectedFile] = useState<{ url: string, name: string, type: string, content?: string } | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const isCourseFavorite = isFavorite(courseId);
 
@@ -76,10 +88,13 @@ export function ChatInterface({ courseId, onBack, onChangeCourse, onSwitchCourse
 
     if (!historyLoading && !initialLoadDone.current) {
       if (savedMessages.length > 0) {
-        setMessages(savedMessages.map((m: ChatMessage) => ({
+        setMessages(savedMessages.map((m: any) => ({
           id: m.id,
           role: m.role,
           content: m.content,
+          file_url: m.file_url,
+          file_name: m.file_name,
+          file_type: m.file_type,
           timestamp: new Date(m.created_at)
         })));
         initialLoadDone.current = true;
@@ -109,7 +124,24 @@ export function ChatInterface({ courseId, onBack, onChangeCourse, onSwitchCourse
         Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
       },
       body: JSON.stringify({
-        messages: userMessages.map(m => ({ role: m.role, content: m.content })),
+        messages: userMessages.map(m => {
+          let content = m.content;
+          if (m.file_type?.startsWith('text/') && m.file_content) {
+            content = `${content}\n\n[Attached Document Content (${m.file_name})]:\n${m.file_content}`;
+          } else if (m.file_name && !m.file_type?.startsWith('image/')) {
+            content = `${content}\n\n[Attachment: ${m.file_name} (Type: ${m.file_type})]`;
+          }
+
+          return {
+            role: m.role,
+            content: m.file_url && m.file_type?.startsWith('image/')
+              ? [
+                { type: "text", text: content },
+                { type: "image_url", image_url: { url: m.file_url } }
+              ]
+              : content
+          };
+        }),
         courseId: course?.id || '',
         courseName: course?.name || '',
         courseLevel: course?.level || '',
@@ -228,9 +260,40 @@ export function ChatInterface({ courseId, onBack, onChangeCourse, onSwitchCourse
     }
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please select a file smaller than 10MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result as string;
+      setSelectedFile({
+        url: base64,
+        name: file.name,
+        type: file.type || 'application/octet-stream',
+        content: file.type.startsWith('text/') ? base64.split(',')[1] : undefined
+      });
+    };
+
+    if (file.type.startsWith('text/')) {
+      reader.readAsText(file);
+    } else {
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isTyping || !user) return;
+    if ((!input.trim() && !selectedFile) || isTyping || !user) return;
 
     let currentConversation = conversation;
 
@@ -252,15 +315,27 @@ export function ChatInterface({ courseId, onBack, onChangeCourse, onSwitchCourse
       id: Date.now().toString(),
       role: 'user',
       content: input.trim(),
+      file_url: selectedFile?.url,
+      file_name: selectedFile?.name,
+      file_type: selectedFile?.type,
+      file_content: selectedFile?.content, // Pass text content for AI
       timestamp: new Date()
     };
 
     // Save user message to database
-    await saveMessage(currentConversation.id, 'user', userMessage.content);
+    await saveMessage(
+      currentConversation.id,
+      'user',
+      userMessage.content,
+      userMessage.file_url,
+      userMessage.file_name,
+      userMessage.file_type
+    );
 
     const updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
     setInput('');
+    setSelectedFile(null);
     setIsTyping(true);
 
     try {
@@ -440,6 +515,25 @@ export function ChatInterface({ courseId, onBack, onChangeCourse, onSwitchCourse
                 <div className={`flex-1 flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[95%] sm:max-w-[90%] lg:max-w-[85%] ${message.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'
                     }`}>
+                    {message.file_url && (
+                      <div className="mb-3 rounded-lg overflow-hidden border border-border/50 max-w-sm">
+                        {message.file_type?.startsWith('image/') ? (
+                          <img
+                            src={message.file_url}
+                            alt={message.file_name || 'Uploaded content'}
+                            className="w-full h-auto object-cover"
+                          />
+                        ) : (
+                          <div className="bg-muted/50 p-3 flex items-center gap-3">
+                            <FileIcon className="w-8 h-8 text-electric" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{message.file_name}</p>
+                              <p className="text-[10px] text-muted-foreground uppercase">{message.file_type?.split('/')[1]}</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                     <div className="whitespace-pre-wrap text-sm sm:text-base">
                       {renderContent(message.content)}
                     </div>
@@ -538,28 +632,77 @@ export function ChatInterface({ courseId, onBack, onChangeCourse, onSwitchCourse
           onSubmit={handleSubmit}
           className="glass-card p-3 sm:p-4 mx-auto w-full max-w-5xl flex-shrink-0"
         >
-          <div className="flex gap-2 sm:gap-3">
-            <div className="flex-1 relative">
+          <AnimatePresence>
+            {selectedFile && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                className="relative inline-block mb-4 p-2 bg-muted/30 rounded-xl border border-border/50"
+              >
+                {selectedFile.type.startsWith('image/') ? (
+                  <img
+                    src={selectedFile.url}
+                    alt="Preview"
+                    className="h-20 sm:h-24 w-auto rounded-lg object-cover"
+                  />
+                ) : (
+                  <div className="h-20 sm:h-24 px-4 flex items-center gap-3 bg-muted rounded-lg">
+                    <FileIcon className="w-8 h-8 text-electric" />
+                    <div className="max-w-[150px]">
+                      <p className="text-xs font-medium truncate">{selectedFile.name}</p>
+                      <p className="text-[10px] text-muted-foreground uppercase">{selectedFile.type.split('/')[1]}</p>
+                    </div>
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setSelectedFile(null)}
+                  className="absolute -top-2 -right-2 p-1 bg-destructive text-destructive-foreground rounded-full shadow-lg hover:scale-110 transition-transform"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <div className="flex gap-2 sm:gap-3 items-end">
+            <div className="flex-1 relative bg-muted/50 border border-border rounded-xl focus-within:ring-2 focus-within:ring-electric/50 focus-within:border-electric/50 transition-all overflow-hidden flex items-end">
+              <button
+                type="button"
+                onClick={() => document.getElementById('file-upload')?.click()}
+                className="p-3 text-muted-foreground hover:text-electric transition-colors"
+                title="Attach document or photo"
+              >
+                <Paperclip className="w-5 h-5" />
+              </button>
+              <input
+                id="file-upload"
+                type="file"
+                accept="image/*,.pdf,.doc,.docx,.txt,.md"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
               <textarea
                 ref={inputRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder={`Ask about ${course?.shortName}...`}
-                className="w-full bg-muted/50 border border-border rounded-xl px-4 py-3 pr-12 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-electric/50 focus:border-electric/50 resize-none min-h-[52px] max-h-32"
+                placeholder={`Ask UniAI about your course materials...`}
+                className="flex-1 bg-transparent border-none px-4 py-3 placeholder:text-muted-foreground focus:outline-none focus:ring-0 resize-none min-h-[52px] max-h-32"
                 rows={1}
               />
             </div>
             <AnimatedButton
               type="submit"
-              disabled={!input.trim() || isTyping}
-              className="self-end"
+              disabled={(!input.trim() && !selectedFile) || isTyping}
+              className="p-3 h-[52px] w-[52px] flex items-center justify-center"
             >
               <Send className="w-5 h-5" />
             </AnimatedButton>
           </div>
           <p className="text-xs text-muted-foreground mt-2 text-center">
-            Press Enter to send • Shift + Enter for new line
+            Attach PDF, Word, or images for AI analysis
           </p>
         </motion.form>
       </div>

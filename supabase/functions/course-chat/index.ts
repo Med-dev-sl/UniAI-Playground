@@ -5,9 +5,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+interface ContentPart {
+  type: "text" | "image_url";
+  text?: string;
+  image_url?: { url: string };
+}
+
 interface ChatMessage {
   role: "user" | "assistant" | "system";
-  content: string;
+  content: string | ContentPart[];
 }
 
 interface RequestBody {
@@ -56,8 +62,9 @@ GUIDELINES:
 4. Encourage critical thinking and provide study tips
 5. If asked about topics outside your course expertise, politely redirect to course-relevant topics
 6. Be supportive, encouraging, and patient like a good tutor
-7. When appropriate, suggest additional resources or study strategies
-8. Use markdown formatting for better readability (bold, bullet points, headers)
+7. You are equipped with vision capabilities: analyze any diagrams, charts, or photos of study materials provided by the student to help explain concepts.
+8. When appropriate, suggest additional resources or study strategies
+9. Use markdown formatting for better readability (bold, bullet points, headers)
 
 Remember: You are here to help students succeed in their "${courseName}" studies!`;
 

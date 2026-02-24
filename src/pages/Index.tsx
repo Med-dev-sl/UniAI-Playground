@@ -9,10 +9,9 @@ import { CourseSelector } from '@/components/CourseSelector';
 import { ChatInterface } from '@/components/ChatInterface';
 import { AnimatedButton } from '@/components/ui/AnimatedButton';
 import { UserMenu } from '@/components/UserMenu';
-import { ProgramLevel, faculties, getCourseById, getFacultyById } from '@/data/courses';
+import { ProgramLevel, faculties, getCourseById } from '@/data/courses';
 import { ArrowRight, ArrowLeft, LogIn } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useProfile } from '@/hooks/useProfile';
 import { useCourse } from '@/contexts/CourseContext';
 
 type Step = 'hero' | 'level' | 'faculty' | 'course' | 'chat';
@@ -23,37 +22,19 @@ const Index = () => {
   const [selectedFaculty, setSelectedFaculty] = useState<string | null>(null);
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
 
-  const { user, loading: authLoading } = useAuth();
-  const { profile, loading: profileLoading, isRegistrationComplete } = useProfile();
+  const { user, loading } = useAuth();
   const { courseState, setCourseState } = useCourse();
   const navigate = useNavigate();
 
-  const loading = authLoading || profileLoading;
-
-  // Auto-redirect to chat if profile is complete
+  // Restore persisted course state on mount if user is logged in
   useEffect(() => {
-    if (!authLoading && !profileLoading && user && isRegistrationComplete && profile?.course_id) {
-      setSelectedLevel(profile.academic_level as ProgramLevel);
-      setSelectedFaculty(profile.faculty_id);
-      setSelectedCourse(profile.course_id);
-
-      setCourseState({
-        level: (profile.academic_level as any) || null,
-        faculty: profile.faculty_id,
-        facultyId: profile.faculty_id,
-        course: profile.course_id,
-        courseId: profile.course_id,
-      });
+    if (courseState.courseId && courseState.level && courseState.facultyId && user && !loading) {
+      setSelectedLevel(courseState.level);
+      setSelectedFaculty(courseState.facultyId);
+      setSelectedCourse(courseState.courseId);
       setStep('chat');
     }
-  }, [authLoading, profileLoading, user, isRegistrationComplete, profile, setCourseState]);
-
-  // If user logged in but registration incomplete, redirect to auth
-  useEffect(() => {
-    if (!authLoading && !profileLoading && user && !isRegistrationComplete) {
-      navigate('/auth');
-    }
-  }, [authLoading, profileLoading, user, isRegistrationComplete, navigate]);
+  }, [user, courseState, loading]);
 
   const handleLevelSelect = (level: ProgramLevel) => {
     setSelectedLevel(level);
@@ -65,6 +46,22 @@ const Index = () => {
 
   const handleCourseSelect = (courseId: string) => {
     setSelectedCourse(courseId);
+  };
+
+  const handleSwitchCourse = (courseId: string) => {
+    const course = getCourseById(courseId);
+    if (course) {
+      setSelectedLevel(course.level);
+      setSelectedFaculty(course.faculty);
+      setSelectedCourse(courseId);
+      setCourseState({
+        level: course.level,
+        faculty: course.faculty,
+        facultyId: course.faculty,
+        course: courseId,
+        courseId: courseId,
+      });
+    }
   };
 
   const goToNextStep = () => {
@@ -151,14 +148,14 @@ const Index = () => {
               </AnimatedButton>
             )}
             <button onClick={resetToStart} className="flex items-center gap-2 focus:outline-none">
-              <img src="/logo.png" alt="Platform Logo" className="w-12 h-12" />
+              <img src="/logo.png" alt="UNI AI - ETU AI Logo" className="w-12 h-12" />
               {step === 'chat' && selectedCourse && (
                 <div className="flex flex-col items-start border-l border-border pl-4 ml-2">
                   <span className="text-sm font-bold text-foreground">
                     {faculties.flatMap(f => f.courses).find(c => c.id === selectedCourse)?.shortName}
                   </span>
                   <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
-                    AI Assistant Active
+                    UNI AI Assistant Active
                   </span>
                 </div>
               )}
@@ -329,6 +326,7 @@ const Index = () => {
             <ChatInterface
               courseId={selectedCourse}
               onBack={goBack}
+              onSwitchCourse={handleSwitchCourse}
             />
           </motion.div>
         )}

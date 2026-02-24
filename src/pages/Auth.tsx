@@ -110,8 +110,8 @@ const Auth = () => {
   ];
 
   const availableFaculties = selectedLevel ? getFacultiesByLevel(selectedLevel) : [];
-  const availableCourses = selectedLevel && selectedFaculty 
-    ? getCoursesByFacultyAndLevel(selectedFaculty, selectedLevel) 
+  const availableCourses = selectedLevel && selectedFaculty
+    ? getCoursesByFacultyAndLevel(selectedFaculty, selectedLevel)
     : [];
 
   const inputClasses = "w-full bg-muted/50 border border-border rounded-xl pl-10 pr-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-electric/50 focus:border-electric/50";
@@ -124,9 +124,8 @@ const Auth = () => {
         return (
           <div
             key={s}
-            className={`h-2 rounded-full transition-all ${
-              i === currentIndex ? 'w-8 bg-electric' : i < currentIndex ? 'w-2 bg-electric/50' : 'w-2 bg-muted'
-            }`}
+            className={`h-2 rounded-full transition-all ${i === currentIndex ? 'w-8 bg-electric' : i < currentIndex ? 'w-2 bg-electric/50' : 'w-2 bg-muted'
+              }`}
           />
         );
       })}
@@ -134,277 +133,299 @@ const Auth = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden flex items-center justify-center px-4">
-      <FloatingOrbs />
-      
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="relative z-10 w-full max-w-md"
-      >
-        {/* Logo */}
+    <div className="min-h-screen bg-background flex flex-col lg:flex-row relative overflow-hidden">
+      {/* Background Orbs */}
+      <div className="absolute inset-0 pointer-events-none opacity-50">
+        <FloatingOrbs />
+      </div>
+
+      {/* Left Column: Auth Form */}
+      <div className="flex-1 flex flex-col justify-center items-center px-4 py-8 lg:py-12 z-10">
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-8"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="w-full max-w-[420px]"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-electric/10 border border-electric/30 mb-4">
-            <Sparkles className="w-4 h-4 text-electric" />
-            <span className="text-sm text-electric font-medium">AI-Powered Learning</span>
+          {/* Logo/Brand (Visible only on mobile top) */}
+          <div className="text-center mb-8 lg:mb-10">
+            <h1 className="text-3xl lg:text-4xl font-display font-bold gradient-text mb-2">UniAI Playground</h1>
+            <p className="text-muted-foreground text-sm lg:text-base">
+              {step === 'auth'
+                ? (isLogin ? 'Welcome Back!!' : 'Create an Account')
+                : 'Complete your profile'}
+            </p>
           </div>
-          <h1 className="text-4xl font-display font-bold gradient-text mb-2">UniAI Playground</h1>
-          <p className="text-muted-foreground">
-            {step === 'auth' 
-              ? (isLogin ? 'Welcome back, Student!' : 'Join thousands of learners')
-              : 'Complete your academic profile'}
-          </p>
-        </motion.div>
 
-        {step !== 'auth' && stepIndicator}
-
-        <AnimatePresence mode="wait">
-          {/* Step 1: Auth */}
-          {step === 'auth' && (
-            <motion.div key="auth" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }}>
-              <GlowCard className="p-8">
-                <form onSubmit={handleSubmit} className="space-y-5">
-                  <h2 className="text-2xl font-display font-semibold text-center text-foreground mb-6">
-                    {isLogin ? 'Sign In' : 'Create Account'}
-                  </h2>
-
+          <AnimatePresence mode="wait">
+            {step === 'auth' && (
+              <motion.div
+                key="auth-form"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="space-y-6"
+              >
+                <form onSubmit={handleSubmit} className="space-y-4">
                   {!isLogin && (
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">Full Name</label>
-                      <div className="relative">
-                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                        <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Enter your full name" className={inputClasses} required={!isLogin} />
+                    <div className="space-y-1.5 focus-within:text-electric transition-colors">
+                      <label className="text-xs font-semibold uppercase tracking-wider ml-1 opacity-70">Full Name</label>
+                      <div className="relative group">
+                        <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-electric transition-colors" />
+                        <input
+                          type="text"
+                          value={fullName}
+                          onChange={(e) => setFullName(e.target.value)}
+                          placeholder="John Doe"
+                          className="w-full bg-secondary/30 border-2 border-border/50 rounded-[2rem] pl-12 pr-6 py-4 text-foreground focus:border-electric focus:ring-0 transition-all outline-none"
+                          required={!isLogin}
+                        />
                       </div>
                     </div>
                   )}
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">Email Address</label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                      <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="student@university.edu" className={inputClasses} required />
+                  <div className="space-y-1.5 focus-within:text-electric transition-colors">
+                    <label className="text-xs font-semibold uppercase tracking-wider ml-1 opacity-70">Email</label>
+                    <div className="relative group">
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-electric transition-colors" />
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="email@example.com"
+                        className="w-full bg-secondary/30 border-2 border-border/50 rounded-[2rem] pl-12 pr-6 py-4 text-foreground focus:border-electric focus:ring-0 transition-all outline-none"
+                        required
+                      />
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <label className="text-sm font-medium text-foreground">Password</label>
+                  <div className="space-y-1.5 focus-within:text-electric transition-colors">
+                    <div className="flex justify-between items-center ml-1">
+                      <label className="text-xs font-semibold uppercase tracking-wider opacity-70">Password</label>
                       {isLogin && (
-                        <button type="button" onClick={() => navigate('/forgot-password')} className="text-xs text-electric hover:text-electric-glow transition-colors">
-                          Forgot password?
+                        <button type="button" onClick={() => navigate('/forgot-password')} className="text-[10px] font-bold text-electric hover:underline">
+                          Forgot Password?
                         </button>
                       )}
                     </div>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                      <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="w-full bg-muted/50 border border-border rounded-xl pl-10 pr-12 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-electric/50 focus:border-electric/50" required minLength={6} />
-                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                    <div className="relative group">
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-electric transition-colors" />
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Enter your password"
+                        className="w-full bg-secondary/30 border-2 border-border/50 rounded-[2rem] pl-12 pr-12 py-4 text-foreground focus:border-electric focus:ring-0 transition-all outline-none"
+                        required
+                        minLength={6}
+                      />
+                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-electric">
                         {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                       </button>
                     </div>
                   </div>
 
-                  <AnimatedButton type="submit" disabled={loading} className="w-full" size="lg">
+                  <AnimatedButton type="submit" disabled={loading} className="w-full py-7 rounded-[2rem] font-bold text-lg shadow-lg shadow-electric/20 mt-2" size="lg">
                     {loading ? (
                       <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                        {isLogin ? 'Signing in...' : 'Creating account...'}
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        {isLogin ? 'Signing in...' : 'Creating...'}
                       </div>
                     ) : (
-                      <>
-                        {isLogin ? 'Sign In' : 'Create Account'}
-                        <ArrowRight className="w-5 h-5" />
-                      </>
+                      isLogin ? 'Login' : 'Sign Up'
                     )}
                   </AnimatedButton>
                 </form>
 
-                <div className="mt-6 text-center">
-                  <p className="text-muted-foreground">
+                <div className="mt-8 text-center">
+                  <p className="text-muted-foreground text-sm">
                     {isLogin ? "Don't have an account?" : 'Already have an account?'}
-                    <button type="button" onClick={() => setIsLogin(!isLogin)} className="ml-2 text-electric hover:text-electric-glow font-medium transition-colors">
+                    <button type="button" onClick={() => setIsLogin(!isLogin)} className="ml-2 text-electric hover:underline font-bold transition-colors">
                       {isLogin ? 'Sign up' : 'Sign in'}
                     </button>
                   </p>
                 </div>
-              </GlowCard>
-            </motion.div>
-          )}
+              </motion.div>
+            )}
 
-          {/* Step 2: University */}
-          {step === 'university' && (
-            <motion.div key="university" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }}>
-              <GlowCard className="p-8">
-                <h2 className="text-2xl font-display font-semibold text-center text-foreground mb-6">
-                  Choose Your University
-                </h2>
-
-                <GlowCard
-                  selected={true}
-                  className="p-4 cursor-pointer"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-electric/20 flex items-center justify-center">
-                      <Building2 className="w-5 h-5 text-electric" />
-                    </div>
-                    <div>
-                      <h3 className="font-display font-semibold text-foreground">Eastern Technical University</h3>
-                      <p className="text-xs text-muted-foreground">ETU</p>
-                    </div>
-                  </div>
-                </GlowCard>
-
-                <AnimatedButton onClick={() => setStep('level')} className="w-full mt-6" size="lg">
-                  Continue
-                  <ArrowRight className="w-5 h-5" />
-                </AnimatedButton>
-              </GlowCard>
-            </motion.div>
-          )}
-
-          {/* Step 3: Level */}
-          {step === 'level' && (
-            <motion.div key="level" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }}>
-              <GlowCard className="p-8">
-                <div className="flex items-center gap-2 mb-6">
-                  <button onClick={() => setStep('university')} className="text-muted-foreground hover:text-foreground">
-                    <ArrowLeft className="w-5 h-5" />
-                  </button>
-                  <h2 className="text-2xl font-display font-semibold text-foreground">Choose Academic Level</h2>
-                </div>
-
-                <div className="space-y-3">
-                  {levelOptions.map((level) => (
-                    <GlowCard
-                      key={level.id}
-                      selected={selectedLevel === level.id}
-                      onClick={() => setSelectedLevel(level.id)}
-                      className="p-4 cursor-pointer"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-electric/20 flex items-center justify-center">
-                          <level.icon className="w-5 h-5 text-electric" />
+            {step !== 'auth' && (
+              <motion.div
+                key="registration-steps"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="w-full"
+              >
+                {stepIndicator}
+                <GlowCard className="p-6 rounded-[2rem] bg-secondary/20 shadow-xl">
+                  {/* Reuse existing step content but with rounded aesthetics */}
+                  {step === 'university' && (
+                    <div className="space-y-6">
+                      <h2 className="text-2xl font-display font-bold text-center">Your University</h2>
+                      <div className="p-4 rounded-2xl border-2 border-electric bg-electric/5 flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-electric/20 flex items-center justify-center text-electric">
+                          <Building2 className="w-6 h-6" />
                         </div>
                         <div>
-                          <h3 className="font-display font-semibold text-foreground">{level.title}</h3>
-                          <p className="text-xs text-muted-foreground">{level.subtitle}</p>
+                          <h3 className="font-bold">Eastern Technical University</h3>
+                          <p className="text-xs opacity-70">SLL / ETU</p>
                         </div>
                       </div>
-                    </GlowCard>
-                  ))}
-                </div>
+                      <AnimatedButton onClick={() => setStep('level')} className="w-full py-6 rounded-2xl font-bold">
+                        Continue
+                        <ArrowRight className="ml-2 w-5 h-5" />
+                      </AnimatedButton>
+                    </div>
+                  )}
 
-                {selectedLevel && (
-                  <AnimatedButton onClick={() => { setSelectedFaculty(null); setSelectedCourse(null); setStep('faculty'); }} className="w-full mt-6" size="lg">
-                    Continue
-                    <ArrowRight className="w-5 h-5" />
-                  </AnimatedButton>
-                )}
-              </GlowCard>
-            </motion.div>
-          )}
-
-          {/* Step 4: Faculty */}
-          {step === 'faculty' && (
-            <motion.div key="faculty" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }}>
-              <GlowCard className="p-6">
-                <div className="flex items-center gap-2 mb-6">
-                  <button onClick={() => setStep('level')} className="text-muted-foreground hover:text-foreground">
-                    <ArrowLeft className="w-5 h-5" />
-                  </button>
-                  <h2 className="text-xl font-display font-semibold text-foreground">Choose Faculty</h2>
-                </div>
-
-                <div className="space-y-2 max-h-[50vh] overflow-y-auto custom-scrollbar pr-1">
-                  {availableFaculties.map((faculty) => (
-                    <GlowCard
-                      key={faculty.id}
-                      selected={selectedFaculty === faculty.id}
-                      onClick={() => setSelectedFaculty(faculty.id)}
-                      className="p-3 cursor-pointer"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl">{faculty.icon}</span>
-                        <div>
-                          <h3 className="font-display font-semibold text-foreground text-sm">{faculty.shortName}</h3>
-                          <p className="text-xs text-muted-foreground line-clamp-1">{faculty.description}</p>
-                        </div>
+                  {step === 'level' && (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3 mb-2">
+                        <button onClick={() => setStep('university')} className="p-2 rounded-full hover:bg-secondary"><ArrowLeft className="w-5 h-5" /></button>
+                        <h2 className="text-xl font-bold">Choose Level</h2>
                       </div>
-                    </GlowCard>
-                  ))}
-                </div>
-
-                {selectedFaculty && (
-                  <AnimatedButton onClick={() => { setSelectedCourse(null); setStep('course'); }} className="w-full mt-4" size="lg">
-                    Continue
-                    <ArrowRight className="w-5 h-5" />
-                  </AnimatedButton>
-                )}
-              </GlowCard>
-            </motion.div>
-          )}
-
-          {/* Step 5: Course */}
-          {step === 'course' && (
-            <motion.div key="course" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }}>
-              <GlowCard className="p-6">
-                <div className="flex items-center gap-2 mb-6">
-                  <button onClick={() => setStep('faculty')} className="text-muted-foreground hover:text-foreground">
-                    <ArrowLeft className="w-5 h-5" />
-                  </button>
-                  <h2 className="text-xl font-display font-semibold text-foreground">Choose Course</h2>
-                </div>
-
-                <div className="space-y-2 max-h-[50vh] overflow-y-auto custom-scrollbar pr-1">
-                  {availableCourses.map((course) => (
-                    <GlowCard
-                      key={course.id}
-                      selected={selectedCourse === course.id}
-                      onClick={() => setSelectedCourse(course.id)}
-                      className="p-3 cursor-pointer"
-                    >
-                      <div>
-                        <h3 className="font-display font-semibold text-foreground text-sm">{course.shortName}</h3>
-                        <p className="text-xs text-muted-foreground line-clamp-1">{course.description}</p>
-                        <p className="text-xs text-electric mt-1">{course.duration}</p>
+                      <div className="grid gap-3">
+                        {levelOptions.map((level) => (
+                          <div
+                            key={level.id}
+                            onClick={() => setSelectedLevel(level.id)}
+                            className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${selectedLevel === level.id ? 'border-electric bg-electric/10' : 'border-border/50 hover:border-electric/30'
+                              }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <level.icon className={`w-5 h-5 ${selectedLevel === level.id ? 'text-electric' : 'text-muted-foreground'}`} />
+                              <div>
+                                <h3 className="font-bold text-sm">{level.title}</h3>
+                                <p className="text-[10px] opacity-60 uppercase">{level.subtitle}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    </GlowCard>
-                  ))}
-                </div>
+                      <AnimatedButton disabled={!selectedLevel} onClick={() => { setSelectedFaculty(null); setSelectedCourse(null); setStep('faculty'); }} className="w-full py-6 rounded-2xl font-bold mt-2">
+                        Continue
+                      </AnimatedButton>
+                    </div>
+                  )}
 
-                {selectedCourse && (
-                  <AnimatedButton onClick={handleCompleteRegistration} disabled={loading} className="w-full mt-4" size="lg">
-                    {loading ? (
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                        Saving...
+                  {step === 'faculty' && (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3 mb-2">
+                        <button onClick={() => setStep('level')} className="p-2 rounded-full hover:bg-secondary"><ArrowLeft className="w-5 h-5" /></button>
+                        <h2 className="text-xl font-bold">Faculty</h2>
                       </div>
-                    ) : (
-                      <>
+                      <div className="grid gap-2 max-h-[40vh] overflow-y-auto custom-scrollbar pr-1">
+                        {availableFaculties.map((faculty) => (
+                          <div
+                            key={faculty.id}
+                            onClick={() => setSelectedFaculty(faculty.id)}
+                            className={`p-3 rounded-2xl border-2 cursor-pointer transition-all ${selectedFaculty === faculty.id ? 'border-electric bg-electric/10' : 'border-border/50 hover:border-electric/30'
+                              }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className="text-xl">{faculty.icon}</span>
+                              <h3 className="font-bold text-sm">{faculty.shortName}</h3>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <AnimatedButton disabled={!selectedFaculty} onClick={() => { setSelectedCourse(null); setStep('course'); }} className="w-full py-6 rounded-2xl font-bold mt-2">
+                        Continue
+                      </AnimatedButton>
+                    </div>
+                  )}
+
+                  {step === 'course' && (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3 mb-2">
+                        <button onClick={() => setStep('faculty')} className="p-2 rounded-full hover:bg-secondary"><ArrowLeft className="w-5 h-5" /></button>
+                        <h2 className="text-xl font-bold">Course</h2>
+                      </div>
+                      <div className="grid gap-2 max-h-[40vh] overflow-y-auto custom-scrollbar pr-1">
+                        {availableCourses.map((course) => (
+                          <div
+                            key={course.id}
+                            onClick={() => setSelectedCourse(course.id)}
+                            className={`p-3 rounded-xl border-2 cursor-pointer transition-all ${selectedCourse === course.id ? 'border-electric bg-electric/10' : 'border-border/50 hover:border-electric/30'
+                              }`}
+                          >
+                            <h3 className="font-bold text-sm">{course.shortName}</h3>
+                            <p className="text-[10px] opacity-60">{course.duration}</p>
+                          </div>
+                        ))}
+                      </div>
+                      <AnimatedButton disabled={!selectedCourse} onClick={handleCompleteRegistration} className="w-full py-6 rounded-2xl font-bold mt-2">
                         Start Learning
-                        <ArrowRight className="w-5 h-5" />
-                      </>
-                    )}
-                  </AnimatedButton>
-                )}
-              </GlowCard>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                      </AnimatedButton>
+                    </div>
+                  )}
+                </GlowCard>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="text-center text-xs text-muted-foreground mt-6"
+          <p className="text-center text-[10px] text-muted-foreground mt-10 opacity-60">
+            By continuing, you agree to our <span className="underline cursor-pointer">Terms of Service</span> and <span className="underline cursor-pointer">Privacy Policy</span>
+          </p>
+        </motion.div>
+      </div>
+
+      {/* Right Column: Illustration (Desktop Only Decor) */}
+      <div className="hidden lg:flex flex-1 relative bg-secondary/10 items-center justify-center overflow-hidden">
+        {/* Animated Background Shapes */}
+        <div className="absolute inset-0 z-0">
+          <div className="absolute top-[10%] right-[10%] w-64 h-64 bg-electric/10 rounded-full blur-[80px] animate-pulse-glow" />
+          <div className="absolute bottom-[10%] left-[10%] w-80 h-80 bg-electric/5 rounded-full blur-[100px] animate-float" />
+        </div>
+
+        {/* The Arch Decor (From Image) */}
+        <motion.div
+          initial={{ opacity: 0, y: 100 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1, ease: "easeOut" }}
+          className="relative z-10 w-[80%] h-[70%] max-w-[500px]"
         >
-          By continuing, you agree to our Terms of Service and Privacy Policy
-        </motion.p>
-      </motion.div>
+          {/* Arched Backdrop */}
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[120%] h-[120%] bg-gradient-to-b from-electric/20 to-transparent rounded-t-[250px] opacity-40 blur-sm" />
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-full bg-secondary/40 backdrop-blur-md rounded-t-[250px] border-t-2 border-x-2 border-electric/30" />
+
+          {/* Character Placeholder / Illustration Area */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8">
+            <motion.div
+              animate={{ y: [0, -15, 0] }}
+              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+              className="mb-10"
+            >
+              <div className="relative">
+                <div className="absolute -inset-8 bg-electric/20 rounded-full blur-[60px] animate-pulse" />
+                <img
+                  src="/logo.jpg"
+                  alt="UniAI Logo"
+                  className="w-56 h-56 object-contain relative z-10 drop-shadow-2xl rounded-3xl"
+                />
+                <div className="absolute -top-4 -right-4">
+                  <Sparkles className="w-12 h-12 text-electric animate-bounce" />
+                </div>
+              </div>
+            </motion.div>
+
+            <h2 className="text-3xl font-display font-bold text-foreground mb-4">Level Up Your Studies</h2>
+            <p className="text-muted-foreground text-lg max-w-[300px]">
+              Adaptive AI tutoring designed specifically for your university curriculum.
+            </p>
+
+            <div className="mt-12 flex gap-4">
+              <div className="px-4 py-2 rounded-full bg-electric/10 border border-electric/20 text-xs font-bold text-electric">ETU Curriculum</div>
+              <div className="px-4 py-2 rounded-full bg-electric/10 border border-electric/20 text-xs font-bold text-electric">AI Analysis</div>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Mobile Illustration (Minimalist Top) */}
+      <div className="lg:hidden h-24 flex items-center justify-center px-4 bg-secondary/5 border-b border-border/50">
+        <Sparkles className="w-6 h-6 text-electric mr-2" />
+        <span className="font-display font-bold text-xl">UniAI</span>
+      </div>
     </div>
   );
 };

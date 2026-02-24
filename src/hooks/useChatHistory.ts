@@ -15,6 +15,9 @@ export interface ChatMessage {
   conversation_id: string;
   role: 'user' | 'assistant';
   content: string;
+  file_url?: string | null;
+  file_name?: string | null;
+  file_type?: string | null;
   created_at: string;
 }
 
@@ -28,14 +31,14 @@ export function useChatHistory(courseId: string) {
   // Load all conversations for this course
   const loadConversations = useCallback(async () => {
     if (!user) return;
-    
+
     const { data } = await supabase
       .from('conversations')
       .select('*')
       .eq('user_id', user.id)
       .eq('course_id', courseId)
       .order('updated_at', { ascending: false });
-    
+
     if (data) {
       setConversations(data);
     }
@@ -48,7 +51,7 @@ export function useChatHistory(courseId: string) {
       .select('*')
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true });
-    
+
     if (data) {
       setMessages(data.map(m => ({
         ...m,
@@ -118,7 +121,10 @@ export function useChatHistory(courseId: string) {
   const saveMessage = useCallback(async (
     conversationId: string,
     role: 'user' | 'assistant',
-    content: string
+    content: string,
+    file_url?: string | null,
+    file_name?: string | null,
+    file_type?: string | null
   ) => {
     const { data, error } = await supabase
       .from('messages')
@@ -126,6 +132,9 @@ export function useChatHistory(courseId: string) {
         conversation_id: conversationId,
         role,
         content,
+        file_url: file_url || null,
+        file_name: file_name || null,
+        file_type: file_type || null,
       })
       .select()
       .single();
@@ -164,7 +173,7 @@ export function useChatHistory(courseId: string) {
       setConversation(null);
       setMessages([]);
     }
-    
+
     await loadConversations();
   }, [conversation, loadConversations]);
 
