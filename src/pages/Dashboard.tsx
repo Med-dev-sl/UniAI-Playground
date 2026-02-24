@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { 
-  MessageSquare, 
-  Star, 
-  TrendingUp, 
-  Clock, 
+import {
+  MessageSquare,
+  Star,
+  TrendingUp,
+  Clock,
   BookOpen,
   ArrowLeft,
   ChevronRight,
@@ -85,7 +85,7 @@ const Dashboard = () => {
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <button onClick={() => navigate('/')} className="focus:outline-none">
-              <img src="/logo.png" alt="Platform Logo" className="w-32 h-32" />
+              <img src="/logo.jpg" alt="Platform Logo" className="w-32 h-32 rounded-xl" />
             </button>
           </div>
           <UserMenu />
