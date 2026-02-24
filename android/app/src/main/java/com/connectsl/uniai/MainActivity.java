@@ -1,4 +1,4 @@
-package com.uniai.app;
+package com.connectsl.uniai;
 
 import com.getcapacitor.BridgeActivity;
 
