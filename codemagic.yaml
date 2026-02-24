@@ -3,7 +3,7 @@ workflows:
     name: UNI AI Android Debug APK
     environment:
       node: latest
-      java: 17
+      java: 21
       groups:
         - supabase_keys
     scripts:
