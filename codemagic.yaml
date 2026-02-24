@@ -1,0 +1,31 @@
+workflows:
+  android-debug-workflow:
+    name: UNI AI Android Debug APK
+    instance_type: mac_mini_m1
+    max_build_duration: 30
+    environment:
+      node: latest
+      java: 17
+      groups:
+        - supabase_keys # We will create this group in Codemagic UI
+    scripts:
+      - name: Install dependencies
+        script: |
+          npm install
+      - name: Build web project
+        script: |
+          npm run build
+      - name: Capacitor Sync
+        script: |
+          npx cap sync android
+      - name: Build Android Debug APK
+        script: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+    artifacts:
+      - android/app/build/outputs/apk/debug/*.apk
+    publishing:
+      email:
+        recipients:
+          - ${{ secrets.NOTIFICATION_EMAIL }} # Optional
