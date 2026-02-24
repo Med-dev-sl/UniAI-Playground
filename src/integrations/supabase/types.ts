@@ -96,37 +96,78 @@ export type Database = {
       }
       profiles: {
         Row: {
+          academic_level: string | null
           avatar_url: string | null
+          course_id: string | null
           created_at: string
           email: string | null
+          faculty_id: string | null
           full_name: string | null
           id: string
           preferred_faculty: string | null
           preferred_level: string | null
+          university_id: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          academic_level?: string | null
           avatar_url?: string | null
+          course_id?: string | null
           created_at?: string
           email?: string | null
+          faculty_id?: string | null
           full_name?: string | null
           id?: string
           preferred_faculty?: string | null
           preferred_level?: string | null
+          university_id?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          academic_level?: string | null
           avatar_url?: string | null
+          course_id?: string | null
           created_at?: string
           email?: string | null
+          faculty_id?: string | null
           full_name?: string | null
           id?: string
           preferred_faculty?: string | null
           preferred_level?: string | null
+          university_id?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_university_id_fkey"
+            columns: ["university_id"]
+            isOneToOne: false
+            referencedRelation: "universities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      universities: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          short_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          short_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          short_name?: string | null
         }
         Relationships: []
       }
