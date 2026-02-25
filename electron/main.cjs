@@ -48,7 +48,6 @@ function createWindow() {
 
     if (isDev) {
         mainWindow.loadURL('http://localhost:8080');
-        mainWindow.webContents.openDevTools();
     } else {
         mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
     }
@@ -86,7 +85,7 @@ function createTray() {
     tray.on('double-click', () => mainWindow.show());
 }
 
-// IPC Handlers for Custom Title Bar (if used later)
+// IPC Handlers
 ipcMain.on('window-min', () => mainWindow.minimize());
 ipcMain.on('window-max', () => {
     if (mainWindow.isMaximized()) mainWindow.unmaximize();
@@ -105,6 +104,8 @@ app.whenReady().then(() => {
             createWindow();
         }
     });
+
+    console.log('UNI AI Desktop Process Started');
 });
 
 app.on('window-all-closed', () => {
