@@ -6,18 +6,20 @@ import { HeroSection } from '@/components/HeroSection';
 import { LevelSelector } from '@/components/LevelSelector';
 import { FacultySelector } from '@/components/FacultySelector';
 import { CourseSelector } from '@/components/CourseSelector';
+import { UniversitySelector } from '@/components/UniversitySelector';
 import { ChatInterface } from '@/components/ChatInterface';
 import { AnimatedButton } from '@/components/ui/AnimatedButton';
 import { UserMenu } from '@/components/UserMenu';
-import { ProgramLevel, faculties, getCourseById } from '@/data/courses';
+import { ProgramLevel, faculties, getCourseById, getUniversityById } from '@/data/courses';
 import { ArrowRight, ArrowLeft, LogIn } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCourse } from '@/contexts/CourseContext';
 
-type Step = 'hero' | 'level' | 'faculty' | 'course' | 'chat';
+type Step = 'hero' | 'university' | 'level' | 'faculty' | 'course' | 'chat';
 
 const Index = () => {
   const [step, setStep] = useState<Step>('hero');
+  const [selectedUniversity, setSelectedUniversity] = useState<string | null>(null);
   const [selectedLevel, setSelectedLevel] = useState<ProgramLevel | null>(null);
   const [selectedFaculty, setSelectedFaculty] = useState<string | null>(null);
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
@@ -29,12 +31,21 @@ const Index = () => {
   // Restore persisted course state on mount if user is logged in
   useEffect(() => {
     if (courseState.courseId && courseState.level && courseState.facultyId && user && !loading) {
+      setSelectedUniversity(courseState.universityId);
       setSelectedLevel(courseState.level);
       setSelectedFaculty(courseState.facultyId);
       setSelectedCourse(courseState.courseId);
       setStep('chat');
     }
   }, [user, courseState, loading]);
+
+  const handleUniversitySelect = (universityId: string) => {
+    setSelectedUniversity(universityId);
+    // Reset subsequent selections when university changes
+    setSelectedLevel(null);
+    setSelectedFaculty(null);
+    setSelectedCourse(null);
+  };
 
   const handleLevelSelect = (level: ProgramLevel) => {
     setSelectedLevel(level);
@@ -55,6 +66,7 @@ const Index = () => {
       setSelectedFaculty(course.faculty);
       setSelectedCourse(courseId);
       setCourseState({
+        universityId: course.universityId,
         level: course.level,
         faculty: course.faculty,
         facultyId: course.faculty,
@@ -67,7 +79,10 @@ const Index = () => {
   const goToNextStep = () => {
     switch (step) {
       case 'hero':
-        setStep('level');
+        setStep('university');
+        break;
+      case 'university':
+        if (selectedUniversity) setStep('level');
         break;
       case 'level':
         if (selectedLevel) setStep('faculty');
@@ -82,6 +97,7 @@ const Index = () => {
             return;
           }
           setCourseState({
+            universityId: selectedUniversity,
             level: selectedLevel,
             faculty: selectedFaculty,
             facultyId: selectedFaculty,
@@ -96,6 +112,14 @@ const Index = () => {
 
   const goBack = () => {
     switch (step) {
+      case 'university':
+        setStep('hero');
+        setSelectedUniversity(null);
+        break;
+      case 'level':
+        setStep('university');
+        setSelectedLevel(null);
+        break;
       case 'faculty':
         setStep('level');
         setSelectedFaculty(null);
@@ -112,6 +136,7 @@ const Index = () => {
 
   const resetToStart = () => {
     setStep('hero');
+    setSelectedUniversity(null);
     setSelectedLevel(null);
     setSelectedFaculty(null);
     setSelectedCourse(null);
@@ -165,12 +190,12 @@ const Index = () => {
           <div className="flex items-center gap-4">
             {step !== 'hero' && step !== 'chat' && (
               <div className="flex items-center gap-2">
-                {['level', 'faculty', 'course'].map((s, i) => (
+                {['university', 'level', 'faculty', 'course'].map((s, i) => (
                   <div
                     key={s}
                     className={`w-2 h-2 rounded-full transition-all ${step === s
                       ? 'w-8 bg-electric'
-                      : ['level', 'faculty', 'course'].indexOf(step) > i
+                      : ['university', 'level', 'faculty', 'course'].indexOf(step) > i
                         ? 'bg-electric/50'
                         : 'bg-muted'
                       }`}
@@ -208,7 +233,36 @@ const Index = () => {
               exit={{ opacity: 0, x: -100 }}
               transition={{ duration: 0.3 }}
             >
-              <HeroSection onGetStarted={() => setStep('level')} />
+              <HeroSection onGetStarted={() => setStep('university')} />
+            </motion.div>
+          )}
+
+          {step === 'university' && (
+            <motion.div
+              key="university"
+              initial={{ opacity: 0, x: 100 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -100 }}
+              transition={{ duration: 0.3 }}
+              className="container max-w-6xl mx-auto px-4 py-12"
+            >
+              <UniversitySelector
+                selectedUniversity={selectedUniversity}
+                onSelectUniversity={handleUniversitySelect}
+              />
+
+              {selectedUniversity && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex justify-center mt-8"
+                >
+                  <AnimatedButton onClick={goToNextStep}>
+                    Continue to Academic Level
+                    <ArrowRight className="w-4 h-4" />
+                  </AnimatedButton>
+                </motion.div>
+              )}
             </motion.div>
           )}
 
@@ -252,6 +306,7 @@ const Index = () => {
             >
               <FacultySelector
                 level={selectedLevel}
+                universityId={selectedUniversity || 'etusl'}
                 selectedFaculty={selectedFaculty}
                 onSelectFaculty={handleFacultySelect}
                 onBack={goBack}

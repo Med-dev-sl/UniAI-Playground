@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { ChevronDown, BookOpen, GraduationCap, Award, Medal } from 'lucide-react';
-import { faculties, getCourseById, getFacultyById, type ProgramLevel } from '@/data/courses';
+import { ChevronDown, BookOpen, GraduationCap, Award, Medal, Landmark } from 'lucide-react';
+import { faculties, getCourseById, getFacultyById, type ProgramLevel, universities } from '@/data/courses';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,19 +23,21 @@ const levelIcons: Record<ProgramLevel, typeof GraduationCap> = {
   degree: GraduationCap,
   diploma: Award,
   certificate: Medal,
+  postgraduate: GraduationCap,
 };
 
 const levelLabels: Record<ProgramLevel, string> = {
   degree: 'Degree',
   diploma: 'Diploma',
   certificate: 'Certificate',
+  postgraduate: 'Postgraduate',
 };
 
 export function CourseSwitchDropdown({ currentCourseId, onSwitchCourse }: CourseSwitchDropdownProps) {
   const currentCourse = getCourseById(currentCourseId);
   const currentFaculty = currentCourse ? getFacultyById(currentCourse.faculty) : null;
 
-  const levels: ProgramLevel[] = ['degree', 'diploma', 'certificate'];
+  const levels: ProgramLevel[] = ['degree', 'diploma', 'certificate', 'postgraduate'];
 
   return (
     <DropdownMenu>
@@ -53,68 +55,79 @@ export function CourseSwitchDropdown({ currentCourseId, onSwitchCourse }: Course
 
       <DropdownMenuContent
         align="end"
-        className="w-[280px] sm:w-[320px] max-h-[60vh] overflow-y-auto bg-popover border border-border z-[100]"
+        className="w-[280px] sm:w-[320px] max-h-[70vh] overflow-y-auto bg-popover border border-border z-[100]"
         sideOffset={8}
       >
         <DropdownMenuLabel className="text-xs text-muted-foreground">
-          Switch Course
+          Switch University & Course
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
 
-        {levels.map((level) => {
-          const LevelIcon = levelIcons[level];
-          const facultiesWithLevel = faculties.filter(f =>
-            f.courses.some(c => c.level === level)
-          );
+        {universities.map((uni) => (
+          <DropdownMenuSub key={uni.id}>
+            <DropdownMenuSubTrigger className="flex items-center gap-2">
+              <span className="text-lg">{uni.icon}</span>
+              <span className="font-semibold">{uni.shortName}</span>
+            </DropdownMenuSubTrigger>
+            <DropdownMenuPortal>
+              <DropdownMenuSubContent
+                className="w-[260px] sm:w-[300px] max-h-[50vh] overflow-y-auto bg-popover border border-border z-[110]"
+              >
+                {levels.map((level) => {
+                  const LevelIcon = levelIcons[level];
+                  const facultiesWithLevel = faculties.filter(f =>
+                    f.universityId === uni.id && f.courses.some(c => c.level === level)
+                  );
 
-          if (facultiesWithLevel.length === 0) return null;
+                  if (facultiesWithLevel.length === 0) return null;
 
-          return (
-            <DropdownMenuSub key={level}>
-              <DropdownMenuSubTrigger className="flex items-center gap-2">
-                <LevelIcon className="w-4 h-4 text-electric" />
-                <span>{levelLabels[level]} Programmes</span>
-              </DropdownMenuSubTrigger>
-              <DropdownMenuPortal>
-                <DropdownMenuSubContent
-                  className="w-[260px] sm:w-[300px] max-h-[50vh] overflow-y-auto bg-popover border border-border z-[110]"
-                >
-                  {facultiesWithLevel.map((faculty) => {
-                    const courses = faculty.courses.filter(c => c.level === level);
-                    if (courses.length === 0) return null;
-
-                    return (
-                      <div key={faculty.id}>
-                        <DropdownMenuLabel className="text-xs text-muted-foreground flex items-center gap-1.5">
-                          <span>{faculty.icon}</span>
-                          <span className="truncate">{faculty.shortName}</span>
-                        </DropdownMenuLabel>
-                        {courses.map((course) => (
-                          <DropdownMenuItem
-                            key={course.id}
-                            onClick={() => onSwitchCourse(course.id)}
-                            className={`text-xs cursor-pointer ${
-                              course.id === currentCourseId
-                                ? 'bg-electric/20 text-electric font-medium'
-                                : ''
-                            }`}
-                          >
-                            <span className="truncate">{course.shortName}</span>
-                          </DropdownMenuItem>
-                        ))}
-                        <DropdownMenuSeparator />
-                      </div>
-                    );
-                  })}
-                </DropdownMenuSubContent>
-              </DropdownMenuPortal>
-            </DropdownMenuSub>
-          );
-        })}
+                  return (
+                    <DropdownMenuSub key={level}>
+                      <DropdownMenuSubTrigger className="flex items-center gap-2">
+                        <LevelIcon className="w-4 h-4 text-electric" />
+                        <span>{levelLabels[level]}</span>
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuPortal>
+                        <DropdownMenuSubContent
+                          className="w-[240px] sm:w-[280px] max-h-[40vh] overflow-y-auto bg-popover border border-border z-[120]"
+                        >
+                          {facultiesWithLevel.map((faculty) => {
+                            const courses = faculty.courses.filter(c => c.level === level);
+                            return (
+                              <div key={faculty.id}>
+                                <DropdownMenuLabel className="text-[10px] text-muted-foreground uppercase flex items-center gap-1.5 py-1">
+                                  <span>{faculty.icon}</span>
+                                  <span className="truncate">{faculty.shortName}</span>
+                                </DropdownMenuLabel>
+                                {courses.map((course) => (
+                                  <DropdownMenuItem
+                                    key={course.id}
+                                    onClick={() => onSwitchCourse(course.id)}
+                                    className={`text-xs cursor-pointer ${course.id === currentCourseId
+                                        ? 'bg-electric/20 text-electric font-medium'
+                                        : ''
+                                      }`}
+                                  >
+                                    <span className="truncate">{course.shortName}</span>
+                                  </DropdownMenuItem>
+                                ))}
+                                <DropdownMenuSeparator />
+                              </div>
+                            );
+                          })}
+                        </DropdownMenuSubContent>
+                      </DropdownMenuPortal>
+                    </DropdownMenuSub>
+                  );
+                })}
+              </DropdownMenuSubContent>
+            </DropdownMenuPortal>
+          </DropdownMenuSub>
+        ))}
 
         {/* Current course info */}
         <DropdownMenuSeparator />
-        <div className="px-2 py-1.5">
+        <div className="px-2 py-1.5 bg-muted/30">
           <p className="text-[10px] text-muted-foreground">
             Current: <span className="text-foreground font-medium">{currentCourse?.shortName}</span>
           </p>

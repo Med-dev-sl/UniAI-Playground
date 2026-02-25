@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { ProgramLevel } from '@/data/courses';
 
 interface CourseState {
+  universityId: string | null;
   level: ProgramLevel | null;
   faculty: string | null;
   facultyId: string | null;
@@ -22,6 +23,7 @@ const STORAGE_KEY = 'uniai_course_state';
 
 export function CourseProvider({ children }: { children: ReactNode }) {
   const [courseState, setCourseStateInternal] = useState<CourseState>({
+    universityId: null,
     level: null,
     faculty: null,
     facultyId: null,
@@ -49,6 +51,7 @@ export function CourseProvider({ children }: { children: ReactNode }) {
 
   const clearCourse = () => {
     const emptyState: CourseState = {
+      universityId: null,
       level: null,
       faculty: null,
       facultyId: null,

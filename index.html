@@ -80,6 +80,12 @@
     }
     </script>
 
+  <script>
+    if (window.navigator.userAgent.indexOf('Electron') !== -1) {
+      document.documentElement.classList.add('is-electron');
+    }
+  </script>
+
 </head>
 
 <body>

@@ -35,6 +35,14 @@ const levels = [
     icon: FileCheck,
     description: 'Technical and Vocational certificates for practical skills',
     gradient: 'from-emerald-500 to-teal-500'
+  },
+  {
+    id: 'postgraduate' as ProgramLevel,
+    title: 'Postgraduate Programme',
+    subtitle: '1-2 Years Duration',
+    icon: GraduationCap,
+    description: 'Master\'s and specialized postgraduate research programmes',
+    gradient: 'from-orange-500 to-red-500'
   }
 ];
 
@@ -58,8 +66,8 @@ export function LevelSelector({ selectedLevel, onSelectLevel, onLogout }: LevelS
           <p className="text-sm text-muted-foreground mb-2">Logged in as</p>
           <p className="font-medium text-foreground">{user?.email}</p>
         </motion.div>
-        <AnimatedButton 
-          variant="secondary" 
+        <AnimatedButton
+          variant="secondary"
           onClick={handleLogout}
           className="flex items-center gap-2"
         >
@@ -95,7 +103,7 @@ export function LevelSelector({ selectedLevel, onSelectLevel, onLogout }: LevelS
                   <level.icon className="w-8 h-8 text-foreground" />
                 </div>
               </div>
-              
+
               <div>
                 <h3 className="text-xl font-display font-semibold text-foreground mb-1">
                   {level.title}

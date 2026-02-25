@@ -6,19 +6,23 @@ import { Faculty, ProgramLevel, getFacultiesByLevel } from '@/data/courses';
 
 interface FacultySelectorProps {
   level: ProgramLevel;
+  universityId: string;
   selectedFaculty: string | null;
   onSelectFaculty: (facultyId: string) => void;
   onBack: () => void;
 }
 
-export function FacultySelector({ level, selectedFaculty, onSelectFaculty, onBack }: FacultySelectorProps) {
-  const faculties = getFacultiesByLevel(level);
+export function FacultySelector({ level, universityId, selectedFaculty, onSelectFaculty, onBack }: FacultySelectorProps) {
+  const faculties = getFacultiesByLevel(level, universityId);
 
-  const levelLabels = {
+  const levelLabels: Record<ProgramLevel, string> = {
     degree: 'Degree',
     diploma: 'Diploma',
-    certificate: 'Certificate'
+    certificate: 'Certificate',
+    postgraduate: 'Postgraduate'
   };
+
+  const isNjala = universityId === 'njala';
 
   return (
     <div className="space-y-8">
@@ -43,10 +47,10 @@ export function FacultySelector({ level, selectedFaculty, onSelectFaculty, onBac
           {levelLabels[level]} Programme
         </div>
         <h2 className="text-3xl md:text-4xl font-display font-bold gradient-text mb-4">
-          Select Your Faculty
+          Select Your {isNjala ? 'School' : 'Faculty'}
         </h2>
         <p className="text-muted-foreground max-w-2xl mx-auto">
-          Choose the faculty that best matches your area of study
+          Choose the {isNjala ? 'school' : 'faculty'} that best matches your area of study
         </p>
       </motion.div>
 
