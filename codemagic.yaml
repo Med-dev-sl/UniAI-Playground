@@ -48,7 +48,12 @@ workflows:
           npx cap sync ios
       - name: Build iOS App
         script: |
-          xcode-project build-ipa --project "$XCODE_PROJECT" --scheme "$XCODE_SCHEME"
+          xcode-project build-ipa \
+            --project "$XCODE_PROJECT" \
+            --scheme "$XCODE_SCHEME" \
+            --no-color \
+            --disable-xcpretty
     artifacts:
       - build/ios/ipa/*.ipa
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/Products/**/*.app
       - /tmp/xcodebuild_logs/*.log
