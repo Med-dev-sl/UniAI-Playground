@@ -133,7 +133,16 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
               onClick={handleDownload}
             >
               <Download className="w-5 h-5" />
-              Download App
+              Android App
+            </AnimatedButton>
+
+            <AnimatedButton
+              size="lg"
+              variant="outline"
+              onClick={() => window.open('https://github.com/Med-dev-sl/UniAI-Playground/releases', '_blank')}
+            >
+              <Download className="w-5 h-5" />
+              iOS (Beta)
             </AnimatedButton>
           </div>
         </motion.div>
