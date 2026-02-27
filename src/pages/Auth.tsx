@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Mail, Lock, User, ArrowRight, ArrowLeft, Eye, EyeOff, Sparkles, GraduationCap, Building2, BookOpen } from 'lucide-react';
 import { FloatingOrbs } from '@/components/ui/FloatingOrbs';
 import { AnimatedButton } from '@/components/ui/AnimatedButton';
@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { ProgramLevel, faculties, getFacultiesByLevel, getCoursesByFacultyAndLevel } from '@/data/courses';
+import { useCourse } from '@/contexts/CourseContext';
 
 type AuthStep = 'auth' | 'university' | 'level' | 'faculty' | 'course' | 'complete';
 
@@ -31,13 +32,37 @@ const Auth = () => {
   const { signIn, signUp, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromCourseSelection = location.state?.fromCourseSelection;
+  const { courseState, setCourseState } = useCourse();
 
   // After signup, move to university step; after login, check profile
   useEffect(() => {
     if (user && step === 'auth' && !isLogin) {
-      setStep('university');
+      if (fromCourseSelection && courseState.courseId) {
+        // Automatically save profile and go to chat
+        const autoComplete = async () => {
+          try {
+            await supabase.from('profiles').update({
+              university_id: courseState.universityId,
+              academic_level: courseState.level,
+              faculty_id: courseState.facultyId,
+              course_id: courseState.courseId,
+              preferred_level: courseState.level,
+              preferred_faculty: courseState.facultyId,
+            }).eq('user_id', user.id);
+            toast({ title: "Profile complete! 🎓", description: "Welcome to UniAI!" });
+            navigate('/');
+          } catch (e) {
+            setStep('university');
+          }
+        };
+        autoComplete();
+      } else {
+        setStep('university');
+      }
     }
-  }, [user, step, isLogin]);
+  }, [user, step, isLogin, fromCourseSelection, courseState, navigate, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,11 +80,36 @@ const Auth = () => {
           .maybeSingle();
 
         if (profile?.course_id && profile?.faculty_id && profile?.academic_level) {
+          if (fromCourseSelection && courseState.courseId) {
+            // They selected a new course on the home page, override current profile
+            await supabase.from('profiles').update({
+              university_id: courseState.universityId,
+              academic_level: courseState.level,
+              faculty_id: courseState.facultyId,
+              course_id: courseState.courseId,
+              preferred_level: courseState.level,
+              preferred_faculty: courseState.facultyId,
+            }).eq('user_id', (await supabase.auth.getUser()).data.user?.id || '');
+          }
           toast({ title: "Welcome back! 🎓", description: "Redirecting to your AI tutor." });
           navigate('/');
         } else {
-          // Need to complete registration
-          setStep('university');
+          // Profile is not complete
+          if (fromCourseSelection && courseState.courseId) {
+            await supabase.from('profiles').update({
+              university_id: courseState.universityId,
+              academic_level: courseState.level,
+              faculty_id: courseState.facultyId,
+              course_id: courseState.courseId,
+              preferred_level: courseState.level,
+              preferred_faculty: courseState.facultyId,
+            }).eq('user_id', (await supabase.auth.getUser()).data.user?.id || '');
+            toast({ title: "Welcome back! 🎓", description: "Redirecting to your AI tutor." });
+            navigate('/');
+          } else {
+            // Need to complete registration manually
+            setStep('university');
+          }
         }
       } else {
         if (!fullName.trim()) throw new Error('Please enter your full name');
@@ -79,11 +129,15 @@ const Auth = () => {
     if (!user || !selectedLevel || !selectedFaculty || !selectedCourse) return;
     setLoading(true);
 
+    // Get university from faculty if possible
+    const facultyInfo = getFacultiesByLevel(selectedLevel).find(f => f.id === selectedFaculty);
+    const resolvedUniversityId = facultyInfo?.universityId || ETU_ID;
+
     try {
       const { error } = await supabase
         .from('profiles')
         .update({
-          university_id: ETU_ID,
+          university_id: resolvedUniversityId,
           academic_level: selectedLevel,
           faculty_id: selectedFaculty,
           course_id: selectedCourse,
@@ -93,6 +147,16 @@ const Auth = () => {
         .eq('user_id', user.id);
 
       if (error) throw error;
+
+      // Update CourseContext so the user is immediately taken to the AI interface
+      setCourseState({
+        universityId: resolvedUniversityId,
+        level: selectedLevel,
+        faculty: selectedFaculty,
+        facultyId: selectedFaculty,
+        course: selectedCourse,
+        courseId: selectedCourse,
+      });
 
       toast({ title: "Profile complete! 🎓", description: "Welcome to UniAI Playground!" });
       navigate('/');

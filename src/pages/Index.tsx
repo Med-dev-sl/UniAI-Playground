@@ -10,7 +10,7 @@ import { UniversitySelector } from '@/components/UniversitySelector';
 import { ChatInterface } from '@/components/ChatInterface';
 import { AnimatedButton } from '@/components/ui/AnimatedButton';
 import { UserMenu } from '@/components/UserMenu';
-import { ProgramLevel, faculties, getCourseById, getUniversityById } from '@/data/courses';
+import { ProgramLevel, faculties, getCourseById, getUniversityById, getFacultyById } from '@/data/courses';
 import { ArrowRight, ArrowLeft, LogIn } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCourse } from '@/contexts/CourseContext';
@@ -66,7 +66,7 @@ const Index = () => {
       setSelectedFaculty(course.faculty);
       setSelectedCourse(courseId);
       setCourseState({
-        universityId: course.universityId,
+        universityId: getFacultyById(course.faculty)?.universityId || 'etusl',
         level: course.level,
         faculty: course.faculty,
         facultyId: course.faculty,
@@ -92,10 +92,6 @@ const Index = () => {
         break;
       case 'course':
         if (selectedCourse) {
-          if (!user) {
-            navigate('/auth');
-            return;
-          }
           setCourseState({
             universityId: selectedUniversity,
             level: selectedLevel,
@@ -104,6 +100,10 @@ const Index = () => {
             course: selectedCourse,
             courseId: selectedCourse,
           });
+          if (!user) {
+            navigate('/auth', { state: { fromCourseSelection: true } });
+            return;
+          }
           setStep('chat');
         }
         break;
