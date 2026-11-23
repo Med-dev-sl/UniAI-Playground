@@ -138,7 +138,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
 
             <AnimatedButton
               size="lg"
-              variant="outline"
+              variant="secondary"
               onClick={() => window.open('https://github.com/Med-dev-sl/UniAI-Playground/releases', '_blank')}
             >
               <Download className="w-5 h-5" />

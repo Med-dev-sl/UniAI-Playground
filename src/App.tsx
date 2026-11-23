@@ -32,7 +32,7 @@ const App = () => (
           <DesktopControls />
           <Toaster />
           <Sonner />
-          <AppDownloadModal />
+          {window.location.pathname !== '/.lovable/oauth/consent' && <AppDownloadModal />}
           <AppRouter>
             <div className="electron-padding w-full h-full min-h-screen">
               <Routes>
