@@ -1,0 +1,4 @@
+- [ ] Add protected, read-only MCP tools for student profiles and saved chats.
+- [ ] Add consent and preserve sign-in/sign-up return paths.
+- [ ] Add browser-local chat reading tools.
+- [ ] Verify tools and prepare the publication handoff.

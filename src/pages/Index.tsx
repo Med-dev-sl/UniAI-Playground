@@ -380,6 +380,7 @@ const Index = () => {
           >
             <ChatInterface
               courseId={selectedCourse}
+              visible={step === 'chat'}
               onBack={goBack}
               onSwitchCourse={handleSwitchCourse}
             />

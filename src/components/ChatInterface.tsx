@@ -9,6 +9,8 @@ import { useFavorites } from '@/hooks/useFavorites';
 import { ConversationHistory } from './ConversationHistory';
 import { CourseSwitchDropdown } from './CourseSwitchDropdown';
 import { useAuth } from '@/hooks/useAuth';
+import { useWebMCP } from 'use-webmcp-tool';
+import { runWebMCPTool } from '@/lib/webmcp-telemetry';
 
 interface Message {
   id: string;
@@ -33,11 +35,12 @@ interface ChatInterfaceProps {
   onBack: () => void;
   onChangeCourse?: () => void;
   onSwitchCourse?: (courseId: string) => void;
+  visible?: boolean;
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/course-chat`;
 
-export function ChatInterface({ courseId, onBack, onChangeCourse, onSwitchCourse }: ChatInterfaceProps) {
+export function ChatInterface({ courseId, onBack, onChangeCourse, onSwitchCourse, visible = true }: ChatInterfaceProps) {
   const course = getCourseById(courseId);
   const faculty = course ? getFacultyById(course.faculty) : null;
   const { toast } = useToast();
@@ -72,6 +75,26 @@ export function ChatInterface({ courseId, onBack, onChangeCourse, onSwitchCourse
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  useWebMCP({
+    name: 'read_current_chat',
+    description: 'Read the messages currently displayed in the student’s open tutoring chat.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+    annotations: { readOnlyHint: true, untrustedContentHint: true },
+    enabled: Boolean(user) && visible,
+    execute: () => runWebMCPTool('read_current_chat', () => {
+      if (historyLoading) return 'Chat history is loading.';
+      return messages.slice(-50).map(message => `${message.role}: ${message.content}`).join('\n');
+    }),
+  });
+  useWebMCP({
+    name: 'read_current_course',
+    description: 'Read the academic course and level of the currently open tutoring chat.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+    annotations: { readOnlyHint: true },
+    enabled: Boolean(user) && visible,
+    execute: () => runWebMCPTool('read_current_course', () => course ? `${course.name}; ${course.level}; ${faculty?.name ?? ''}` : 'Course unavailable.'),
+  });
 
 
 

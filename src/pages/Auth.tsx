@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useCourse } from '@/contexts/CourseContext';
+import { oauthReturnPath } from '@/lib/oauth-return-path';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -22,11 +23,13 @@ const Auth = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
+  const next = oauthReturnPath(new URLSearchParams(location.search).get('next'));
   const fromCourseSelection = location.state?.fromCourseSelection;
   const { courseState, setCourseState } = useCourse();
 
   // After signup, move to chat if they have a course, else go to home to pick one
   useEffect(() => {
+    if (user && next !== '/') { window.location.assign(next); return; }
     if (user && !isLogin) {
       if (courseState.courseId) {
         // Automatically save profile and go to chat
@@ -52,7 +55,7 @@ const Auth = () => {
         navigate('/');
       }
     }
-  }, [user, isLogin, courseState, navigate, toast]);
+  }, [user, isLogin, courseState, navigate, toast, next]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,6 +65,7 @@ const Auth = () => {
       if (isLogin) {
         const { error } = await signIn(email, password);
         if (error) throw error;
+        if (next !== '/') { window.location.assign(next); return; }
         // Check if profile is complete
         const { data: profile } = await supabase
           .from('profiles')

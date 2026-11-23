@@ -1,0 +1,94 @@
+{
+  "version": 1,
+  "sdk_version": "3.6.0",
+  "path": "/functions/v1/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://uqwfsccobsxrbhmoyxfd.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "uniai-sierra-leone",
+      "version": "0.1.0",
+      "title": "UniAI Sierra Leone"
+    },
+    "tools": [
+      {
+        "name": "get_student_profile",
+        "title": "Get student academic profile",
+        "description": "Read the signed-in student’s saved name, university, academic level, faculty and course.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_conversations",
+        "title": "List saved student chats",
+        "description": "List up to 50 recent conversations owned by the signed-in student, optionally filtered by course.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "course_id": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Optional course identifier to filter saved chats."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "read_conversation",
+        "title": "Read saved chat messages",
+        "description": "Read a page of up to 50 messages from a conversation owned by the signed-in student.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "conversation_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Conversation ID returned by list_conversations."
+            },
+            "offset": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10000,
+              "default": 0,
+              "description": "Message offset for reading the next page."
+            }
+          },
+          "required": [
+            "conversation_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
