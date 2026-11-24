@@ -36,3 +36,5 @@ export function Logo({ size = 'md', variant = 'wordmark', className }: LogoProps
     />
   );
 }
+
+export default Logo;
