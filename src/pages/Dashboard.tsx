@@ -17,6 +17,7 @@ import { useFavorites } from '@/hooks/useFavorites';
 import { faculties, Course } from '@/data/courses';
 import { FloatingOrbs } from '@/components/ui/FloatingOrbs';
 import { UserMenu } from '@/components/UserMenu';
+import { Logo } from '@/components/Logo';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
@@ -90,7 +91,7 @@ const Dashboard = () => {
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <button onClick={() => navigate('/')} className="focus:outline-none">
-              <img src="/logo.jpg" alt="Platform Logo" className="w-32 h-32 rounded-xl" />
+              <Logo size="md" />
             </button>
           </div>
           <UserMenu />

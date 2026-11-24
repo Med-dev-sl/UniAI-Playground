@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { oauthClient, type AuthorizationDetails } from '@/lib/oauth-client';
+import { Logo } from '@/components/Logo';
 
 export default function OAuthConsent() {
   const [params] = useSearchParams();
@@ -55,6 +56,7 @@ export default function OAuthConsent() {
   const scopes = details?.scopes ?? details?.scope?.split(/\s+/).filter(Boolean) ?? [];
   return <main className="min-h-screen bg-background text-foreground flex items-center justify-center px-4 py-10">
     <section className="w-full max-w-lg space-y-6">
+      <Logo size="md" />
       <h1 className="text-2xl font-bold">{details ? `Connect ${name} to UniAI Sierra Leone` : 'UniAI Sierra Leone connection'}</h1>
       {user && <div className="flex flex-wrap items-center gap-3"><span className="text-muted-foreground break-all">{user.email}</span><Button variant="ghost" disabled={busy} onClick={() => signOut()}>Switch account</Button></div>}
       {error && <div role="alert" className="text-destructive space-y-3"><p>{error}</p><Button variant="outline" disabled={busy} onClick={() => setRetry(v => v + 1)}>Try again</Button></div>}

@@ -25,7 +25,7 @@ export const AnimatedButton = forwardRef<HTMLButtonElement, AnimatedButtonProps>
     const baseStyles = "relative font-display font-semibold rounded-xl transition-all duration-300 overflow-hidden";
     
     const variants = {
-      primary: "bg-gradient-to-r from-electric to-electric-glow text-primary-foreground hover:shadow-[0_0_30px_hsl(217,91%,60%,0.4)]",
+      primary: "bg-gradient-to-r from-royal to-electric text-foreground hover:shadow-[0_0_30px_hsl(204,100%,56%,0.45)]",
       secondary: "bg-secondary text-secondary-foreground border border-border hover:border-electric/50 hover:bg-secondary/80",
       ghost: "bg-transparent text-foreground hover:bg-muted"
     };

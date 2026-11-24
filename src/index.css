@@ -4,99 +4,100 @@
 @tailwind components;
 @tailwind utilities;
 
-/* UniAI Playground Design System - Deep Blue, Black & White */
+/* UniAI Playground Design System - Royal Navy, Cobalt, Electric Cyan & White */
 
 @layer base {
   :root {
-    --background: 222 47% 5%;
-    --foreground: 210 40% 98%;
+    --background: 232 82% 8%;
+    --foreground: 210 100% 99%;
 
-    --card: 222 47% 8%;
-    --card-foreground: 210 40% 98%;
+    --card: 230 78% 12%;
+    --card-foreground: 210 100% 99%;
 
-    --popover: 222 47% 8%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 230 78% 12%;
+    --popover-foreground: 210 100% 99%;
 
-    --primary: 217 91% 60%;
-    --primary-foreground: 222 47% 5%;
+    --primary: 204 100% 56%;
+    --primary-foreground: 232 82% 8%;
 
-    --secondary: 222 47% 12%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 228 74% 18%;
+    --secondary-foreground: 210 100% 99%;
 
-    --muted: 222 30% 15%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 228 52% 20%;
+    --muted-foreground: 218 35% 74%;
 
-    --accent: 217 91% 60%;
-    --accent-foreground: 222 47% 5%;
+    --accent: 204 100% 56%;
+    --accent-foreground: 232 82% 8%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 222 30% 18%;
-    --input: 222 30% 18%;
-    --ring: 217 91% 60%;
+    --border: 225 56% 24%;
+    --input: 225 56% 24%;
+    --ring: 204 100% 56%;
 
     --radius: 0.75rem;
 
-    /* Custom UniAI tokens */
-    --navy-deep: 222 47% 5%;
-    --navy-dark: 222 47% 8%;
-    --navy-medium: 222 47% 12%;
-    --navy-light: 222 30% 18%;
-    --electric-blue: 217 91% 60%;
-    --electric-blue-glow: 217 91% 70%;
-    --ice-white: 210 40% 98%;
-    --cool-gray: 215 20% 65%;
+    /* Custom UniAI tokens derived from brand logo */
+    --navy-deep: 232 82% 8%;
+    --navy-dark: 230 78% 12%;
+    --navy-medium: 228 74% 18%;
+    --navy-light: 225 56% 24%;
+    --royal-blue: 226 92% 46%;
+    --electric-blue: 204 100% 56%;
+    --electric-blue-glow: 192 100% 64%;
+    --ice-white: 210 100% 99%;
+    --cool-gray: 218 35% 74%;
 
     /* Gradients */
-    --gradient-hero: linear-gradient(135deg, hsl(222 47% 5%) 0%, hsl(222 47% 12%) 50%, hsl(217 91% 20%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(222 47% 10% / 0.8) 0%, hsl(222 47% 6% / 0.9) 100%);
-    --gradient-glow: linear-gradient(135deg, hsl(217 91% 60% / 0.3) 0%, hsl(217 91% 70% / 0.1) 100%);
-    --gradient-button: linear-gradient(135deg, hsl(217 91% 55%) 0%, hsl(217 91% 65%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(232 82% 8%) 0%, hsl(228 84% 16%) 55%, hsl(226 92% 30%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(230 78% 14% / 0.85) 0%, hsl(232 82% 9% / 0.92) 100%);
+    --gradient-glow: linear-gradient(135deg, hsl(226 92% 46% / 0.35) 0%, hsl(196 100% 58% / 0.14) 100%);
+    --gradient-button: linear-gradient(135deg, hsl(226 92% 46%) 0%, hsl(204 100% 52%) 100%);
 
     /* Shadows */
-    --shadow-glow: 0 0 40px hsl(217 91% 60% / 0.3);
-    --shadow-card: 0 8px 32px hsl(222 47% 3% / 0.5);
-    --shadow-elevated: 0 20px 60px hsl(222 47% 3% / 0.6);
+    --shadow-glow: 0 0 40px hsl(204 100% 56% / 0.32);
+    --shadow-card: 0 8px 32px hsl(232 90% 4% / 0.55);
+    --shadow-elevated: 0 20px 60px hsl(232 90% 4% / 0.65);
 
-    --sidebar-background: 222 47% 6%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 217 91% 60%;
-    --sidebar-primary-foreground: 222 47% 5%;
-    --sidebar-accent: 222 47% 12%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 222 30% 18%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-background: 232 82% 9%;
+    --sidebar-foreground: 210 100% 99%;
+    --sidebar-primary: 204 100% 56%;
+    --sidebar-primary-foreground: 232 82% 8%;
+    --sidebar-accent: 228 74% 18%;
+    --sidebar-accent-foreground: 210 100% 99%;
+    --sidebar-border: 225 56% 24%;
+    --sidebar-ring: 204 100% 56%;
   }
 
   .dark {
-    --background: 222 47% 5%;
-    --foreground: 210 40% 98%;
-    --card: 222 47% 8%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222 47% 8%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217 91% 60%;
-    --primary-foreground: 222 47% 5%;
-    --secondary: 222 47% 12%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 222 30% 15%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 217 91% 60%;
-    --accent-foreground: 222 47% 5%;
+    --background: 232 82% 8%;
+    --foreground: 210 100% 99%;
+    --card: 230 78% 12%;
+    --card-foreground: 210 100% 99%;
+    --popover: 230 78% 12%;
+    --popover-foreground: 210 100% 99%;
+    --primary: 204 100% 56%;
+    --primary-foreground: 232 82% 8%;
+    --secondary: 228 74% 18%;
+    --secondary-foreground: 210 100% 99%;
+    --muted: 228 52% 20%;
+    --muted-foreground: 218 35% 74%;
+    --accent: 204 100% 56%;
+    --accent-foreground: 232 82% 8%;
     --destructive: 0 62% 30%;
     --destructive-foreground: 210 40% 98%;
-    --border: 222 30% 18%;
-    --input: 222 30% 18%;
-    --ring: 217 91% 60%;
-    --sidebar-background: 222 47% 6%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 217 91% 60%;
-    --sidebar-primary-foreground: 222 47% 5%;
-    --sidebar-accent: 222 47% 12%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 222 30% 18%;
-    --sidebar-ring: 217 91% 60%;
+    --border: 225 56% 24%;
+    --input: 225 56% 24%;
+    --ring: 204 100% 56%;
+    --sidebar-background: 232 82% 9%;
+    --sidebar-foreground: 210 100% 99%;
+    --sidebar-primary: 204 100% 56%;
+    --sidebar-primary-foreground: 232 82% 8%;
+    --sidebar-accent: 228 74% 18%;
+    --sidebar-accent-foreground: 210 100% 99%;
+    --sidebar-border: 225 56% 24%;
+    --sidebar-ring: 204 100% 56%;
   }
 }
 
@@ -147,7 +148,7 @@
 
   .floating-orb {
     @apply absolute rounded-full blur-3xl opacity-30;
-    background: radial-gradient(circle, hsl(var(--electric-blue)) 0%, transparent 70%);
+    background: radial-gradient(circle, hsl(var(--royal-blue)) 0%, hsl(var(--electric-blue) / 0.45) 45%, transparent 72%);
   }
 
   .grid-pattern {
@@ -158,7 +159,7 @@
   }
 
   .chat-bubble-user {
-    @apply bg-primary text-primary-foreground rounded-2xl rounded-br-md px-4 py-3;
+    @apply text-foreground rounded-2xl rounded-br-md px-4 py-3;
     background: var(--gradient-button);
   }
 
@@ -251,11 +252,11 @@
 
     0%,
     100% {
-      box-shadow: 0 0 20px hsl(217 91% 60% / 0.3);
+      box-shadow: 0 0 20px hsl(204 100% 56% / 0.32);
     }
 
     50% {
-      box-shadow: 0 0 40px hsl(217 91% 60% / 0.5);
+      box-shadow: 0 0 40px hsl(204 100% 56% / 0.55);
     }
   }
 

@@ -44,27 +44,27 @@ const AppDownloadModal = () => {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="w-full max-w-sm mx-auto p-0 border-0 rounded-2xl overflow-hidden shadow-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <DialogContent className="w-full max-w-sm mx-auto p-0 border border-border/60 rounded-2xl overflow-hidden shadow-2xl bg-card">
         {/* Header with gradient */}
-        <div className="relative bg-gradient-to-r from-blue-600 to-purple-600 px-6 pt-6 pb-8">
+        <div className="relative bg-gradient-to-r from-navy-medium via-royal to-electric px-6 pt-6 pb-8">
           <button
             onClick={handleClose}
-            className="absolute top-4 right-4 p-2 hover:bg-white hover:bg-opacity-20 rounded-full transition-all duration-200"
+            className="absolute top-4 right-4 p-2 hover:bg-foreground/20 rounded-full transition-all duration-200"
             aria-label="Close"
           >
-            <X className="w-5 h-5 text-white" />
+            <X className="w-5 h-5 text-foreground" />
           </button>
 
           <div className="flex items-center justify-center mb-4">
-            <div className="p-3 bg-white bg-opacity-20 rounded-full">
-              <Smartphone className="w-8 h-8 text-white" />
+            <div className="p-3 bg-foreground/15 rounded-full">
+              <Smartphone className="w-8 h-8 text-foreground" />
             </div>
           </div>
 
-          <h2 className="text-xl font-bold text-white text-center">
+          <h2 className="text-xl font-bold text-foreground text-center">
             Get the UniAI App
           </h2>
-          <p className="text-blue-100 text-sm text-center mt-1">
+          <p className="text-foreground/85 text-sm text-center mt-1">
             Available for Android
           </p>
         </div>
@@ -160,7 +160,7 @@ const AppDownloadModal = () => {
         <div className="px-6 pb-6 space-y-3">
           <button
             onClick={handleDownload}
-            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl active:scale-95"
+            className="w-full bg-gradient-to-r from-royal to-electric hover:opacity-95 text-foreground font-semibold py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl active:scale-95"
           >
             <Download className="w-5 h-5" />
             Download for Android
@@ -168,7 +168,7 @@ const AppDownloadModal = () => {
 
           <button
             onClick={handleClose}
-            className="w-full bg-gray-700 hover:bg-gray-600 text-gray-100 font-medium py-2 px-4 rounded-lg transition-all duration-200"
+            className="w-full bg-secondary hover:bg-secondary/80 text-secondary-foreground font-medium py-2 px-4 rounded-lg transition-all duration-200"
           >
             Maybe later
           </button>

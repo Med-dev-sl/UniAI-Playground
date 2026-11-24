@@ -10,6 +10,7 @@ import { UniversitySelector } from '@/components/UniversitySelector';
 import { ChatInterface } from '@/components/ChatInterface';
 import { AnimatedButton } from '@/components/ui/AnimatedButton';
 import { UserMenu } from '@/components/UserMenu';
+import { Logo } from '@/components/Logo';
 import { ProgramLevel, faculties, getCourseById, getUniversityById, getFacultyById } from '@/data/courses';
 import { ArrowRight, ArrowLeft, LogIn } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
@@ -173,7 +174,7 @@ const Index = () => {
               </AnimatedButton>
             )}
             <button onClick={resetToStart} className="flex items-center gap-2 focus:outline-none">
-              <img src="/logo.jpg" alt="UNI AI Logo" className="w-12 h-12 rounded-lg" />
+              <Logo size="sm" />
               {step === 'chat' && selectedCourse && (
                 <div className="flex flex-col items-start border-l border-border pl-4 ml-2">
                   <span className="text-sm font-bold text-foreground">

@@ -67,6 +67,7 @@ export default {
           medium: "hsl(var(--navy-medium))",
           light: "hsl(var(--navy-light))",
         },
+        royal: "hsl(var(--royal-blue))",
         electric: {
           DEFAULT: "hsl(var(--electric-blue))",
           glow: "hsl(var(--electric-blue-glow))",

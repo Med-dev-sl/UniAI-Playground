@@ -5,6 +5,7 @@ import { Mail, Lock, User, ArrowRight, ArrowLeft, Eye, EyeOff, Sparkles, Graduat
 import { FloatingOrbs } from '@/components/ui/FloatingOrbs';
 import { AnimatedButton } from '@/components/ui/AnimatedButton';
 import { GlowCard } from '@/components/ui/GlowCard';
+import { Logo } from '@/components/Logo';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -134,7 +135,7 @@ const Auth = () => {
         >
           {/* Logo/Brand (Visible only on mobile top) */}
           <div className="text-center mb-8 lg:mb-10">
-            <h1 className="text-3xl lg:text-4xl font-display font-bold gradient-text mb-2">UniAI Playground</h1>
+            <Logo size="lg" className="mx-auto mb-3" />
             <p className="text-muted-foreground text-sm lg:text-base">
               {isLogin ? 'Welcome Back!!' : 'Create an Account'}
             </p>
@@ -264,11 +265,7 @@ const Auth = () => {
             >
               <div className="relative">
                 <div className="absolute -inset-8 bg-electric/20 rounded-full blur-[60px] animate-pulse" />
-                <img
-                  src="/logo.jpg"
-                  alt="UniAI Logo"
-                  className="w-56 h-56 object-contain relative z-10 drop-shadow-2xl rounded-3xl"
-                />
+                <Logo variant="banner" className="w-72 relative z-10" />
                 <div className="absolute -top-4 -right-4">
                   <Sparkles className="w-12 h-12 text-electric animate-bounce" />
                 </div>

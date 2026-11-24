@@ -5,6 +5,7 @@ import { Mail, ArrowRight, ArrowLeft, CheckCircle, KeyRound } from 'lucide-react
 import { FloatingOrbs } from '@/components/ui/FloatingOrbs';
 import { AnimatedButton } from '@/components/ui/AnimatedButton';
 import { GlowCard } from '@/components/ui/GlowCard';
+import { Logo } from '@/components/Logo';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -166,11 +167,7 @@ const ForgotPassword = () => {
             >
               <div className="relative">
                 <div className="absolute -inset-6 bg-electric/20 rounded-full blur-[40px] animate-pulse" />
-                <img
-                  src="/logo.jpg"
-                  alt="UniAI Logo"
-                  className="w-40 h-40 object-contain relative z-10 drop-shadow-xl rounded-2xl"
-                />
+                <Logo variant="banner" className="w-60 relative z-10" />
               </div>
             </motion.div>
             <h2 className="text-2xl font-display font-bold text-foreground">Secure Recovery</h2>

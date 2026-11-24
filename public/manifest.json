@@ -4,13 +4,13 @@
     "description": "AI-Powered Learning for Sierra Leone Universities with specialized course agents.",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#020617",
-    "theme_color": "#0ea5e9",
+    "background_color": "#040B25",
+    "theme_color": "#001461",
     "icons": [
         {
-            "src": "logo.jpg",
-            "sizes": "512x512",
-            "type": "image/jpeg",
+            "src": "/favicon.png",
+            "sizes": "64x64",
+            "type": "image/png",
             "purpose": "any maskable"
         }
     ]

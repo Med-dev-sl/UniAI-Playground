@@ -1,5 +1,6 @@
 import { Minus, Square, X, Copy } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import uniaiLogoWhite from '@/assets/uniai-logo-white.png.asset.json';
 
 export const DesktopControls = () => {
     const [isMaximized, setIsMaximized] = useState(false);
@@ -17,8 +18,7 @@ export const DesktopControls = () => {
     return (
         <div className="fixed top-0 left-0 right-0 h-8 flex items-center justify-between z-[9999] drag-region bg-background/50 backdrop-blur-sm border-b border-border/10">
             <div className="flex items-center px-4 gap-2 no-drag">
-                <img src="/logo.jpg" alt="Logo" className="w-4 h-4 rounded-sm" />
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">UNI AI</span>
+                <img src={uniaiLogoWhite.url} alt="UniAI" className="h-3.5 w-auto object-contain" />
             </div>
 
             <div className="flex items-center h-full no-drag">
